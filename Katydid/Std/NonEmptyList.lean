@@ -34,36 +34,36 @@ def merge' [Ord α] (xs: NonEmptyList α) (ys: NonEmptyList α): List α :=
 
 def merge [Ord α] (xs: NonEmptyList α) (ys: NonEmptyList α): NonEmptyList α :=
   match xs with
-  | NonEmptyList.mk x' xs' =>
+  | NonEmptyList.mk x1 xs1 =>
   match ys with
-  | NonEmptyList.mk y' ys' =>
-  match Ord.compare x' y' with
+  | NonEmptyList.mk y1 ys1 =>
+  match Ord.compare x1 y1 with
   | Ordering.eq =>
-    NonEmptyList.mk x' (Lists.merge xs' ys')
+    NonEmptyList.mk x1 (Lists.merge xs1 ys1)
   | Ordering.lt =>
-    NonEmptyList.mk x' (Lists.merge xs' (y'::ys'))
+    NonEmptyList.mk x1 (Lists.merge xs1 (y1::ys1))
   | Ordering.gt =>
-    NonEmptyList.mk y' (Lists.merge (x'::xs') ys')
+    NonEmptyList.mk y1 (Lists.merge (x1::xs1) ys1)
 
 def eraseReps [BEq α] (xs: NonEmptyList α): NonEmptyList α :=
   match xs with
-  | NonEmptyList.mk x' xs' =>
-    match xs' with
-    | [] => xs
-    | (x''::xs'') =>
-      if x' == x''
-      then NonEmptyList.eraseReps (NonEmptyList.mk x'' xs'')
-      else NonEmptyList.mk x' (Lists.eraseReps xs')
+  | NonEmptyList.mk x1 xs1 =>
+  match xs1 with
+  | [] => xs
+  | (x2::xs2) =>
+    if x1 == x2
+    then NonEmptyList.eraseReps (NonEmptyList.mk x2 xs2)
+    else NonEmptyList.mk x1 (Lists.eraseReps xs1)
 
 def mergeReps [BEq α] [Ord α] (xs ys : NonEmptyList α): NonEmptyList α :=
   match xs, ys with
-  | NonEmptyList.mk x xs, NonEmptyList.mk y ys =>
-    match Ord.compare x y with
-    | Ordering.eq =>
-        match xs with
-        | [] =>
-            NonEmptyList.mk y ys
-        | (x'::xs') =>
-            NonEmptyList.mergeReps (NonEmptyList.mk x' xs') (NonEmptyList.mk y ys)
-    | Ordering.lt => NonEmptyList.mk x (Lists.mergeReps xs (y::ys))
-    | Ordering.gt => NonEmptyList.mk y (Lists.mergeReps (x::xs) ys)
+  | NonEmptyList.mk x1 xs1, NonEmptyList.mk y1 ys1 =>
+  match Ord.compare x1 y1 with
+  | Ordering.eq =>
+    match xs1 with
+    | [] =>
+      NonEmptyList.mk y1 ys1
+    | (x2::xs2) =>
+      NonEmptyList.mergeReps (NonEmptyList.mk x2 xs2) (NonEmptyList.mk y1 ys1)
+  | Ordering.lt => NonEmptyList.mk x1 (Lists.mergeReps xs1 (y1::ys1))
+  | Ordering.gt => NonEmptyList.mk y1 (Lists.mergeReps (x1::xs1) ys1)
