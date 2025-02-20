@@ -393,18 +393,113 @@ def smartOr (x y: Regex α): Regex α :=
   | Regex.emptyset => x
   | Regex.star (Regex.pred (Predicate.mk "any" _)) => y
   | _ =>
-    -- it is implied that xs is sorted, given it was created using smartOr
     let xs := orToList x
     let ys := orToList y
-    -- merge the sorted lists and remove duplicates,
-    -- resulting in a sorted list of unique items.
+    -- It is implied that xs is sorted, given it was created using smartOr.
+    -- Merge the sorted lists and remove duplicates, resulting in a sorted list of unique items.
     let ors := NonEmptyList.mergeReps xs ys
     orFromList ors
 
+private theorem smartOr_emptyset_l_is_r (x: Regex α):
+  denote (Regex.or Regex.emptyset x) = denote (smartOr Regex.emptyset x) := by
+  simp only [smartOr]
+  nth_rewrite 1 [denote]
+  nth_rewrite 1 [denote]
+  rw [Language.simp_or_emptyset_l_is_r]
+
+private theorem smartOr_emptyset_r_is_l':
+  smartOr x Regex.emptyset = x := by
+  simp only [smartOr]
+  split
+  · rfl
+  · rfl
+  · rfl
+
+private theorem smartOr_emptyset_r_is_l (x: Regex α):
+  denote (Regex.or x Regex.emptyset) = denote (smartOr x Regex.emptyset) := by
+  nth_rewrite 1 [denote]
+  nth_rewrite 1 [denote]
+  rw [Language.simp_or_emptyset_r_is_l]
+  rw [smartOr_emptyset_r_is_l']
+
+private theorem smartOr_orFromList_mergeReps_orToList_is_or (x y: Regex α):
+  denote (orFromList (NonEmptyList.mergeReps (orToList x) (orToList y))) = denote (Regex.or x y):= by
+  induction x with
+  | emptyset =>
+    simp [denote, orFromList, orToList, NonEmptyList.mergeReps]
+    sorry
+  | emptystr =>
+    sorry
+  | pred _ =>
+    sorry
+  | or x1 x2 =>
+    sorry
+  | concat x1 x2 =>
+    sorry
+  | star x1 =>
+    sorry
+
 theorem smartOr_is_or (x y: Regex α):
   denote (Regex.or x y) = denote (smartOr x y) := by
-  -- TODO
-  sorry
+  induction x with
+  | emptyset =>
+    rw [smartOr_emptyset_l_is_r]
+  | emptystr =>
+    cases y with
+    | emptyset =>
+      rw [smartOr_emptyset_r_is_l]
+    | emptystr =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+    | pred _ =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+    | or y1 y2 =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+    | concat y1 y2 =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+    | star y1 =>
+      cases y1 with
+      | emptyset =>
+        simp only [smartOr]
+        rw [smartOr_orFromList_mergeReps_orToList_is_or]
+      | emptystr =>
+        simp only [smartOr]
+        rw [smartOr_orFromList_mergeReps_orToList_is_or]
+      | pred p1 =>
+        simp only [smartOr]
+        split
+        · case _ _ h =>
+          contradiction
+        · case _ _ h _ _ h' =>
+          simp at h'
+          rw [h']
+          unfold denote
+          sorry
+        · case _ _ h _ =>
+          sorry
+      | or y11 y12 =>
+        simp only [smartOr]
+        rw [smartOr_orFromList_mergeReps_orToList_is_or]
+      | concat y11 y12 =>
+        simp only [smartOr]
+        rw [smartOr_orFromList_mergeReps_orToList_is_or]
+      | star y11 =>
+        simp only [smartOr]
+        rw [smartOr_orFromList_mergeReps_orToList_is_or]
+  | pred p =>
+    cases p
+    case mk pred dpred desc func =>
+    simp only [smartOr]
+    sorry
+  | or x1 x2 =>
+    sorry
+  | concat x1 x2 =>
+    sorry
+  | star x1 =>
+    sorry
 
 def derive (r: Regex α) (a: α): Regex α :=
   match r with
