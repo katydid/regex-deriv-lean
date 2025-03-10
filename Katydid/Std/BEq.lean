@@ -1,3 +1,5 @@
+import Katydid.Std.Linter.DetectClassical
+
 theorem beq_eq_or_neq {α: Type} [BEq α] (x y: α):
   BEq.beq x y \/ (Not (BEq.beq x y)) := by
   by_cases BEq.beq x y

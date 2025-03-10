@@ -1,3 +1,5 @@
+import Katydid.Std.Linter.DetectClassical
+
 namespace Decidable
 
 def or {α β: Prop} (a: Decidable α) (b: Decidable β): Decidable (α \/ β) :=

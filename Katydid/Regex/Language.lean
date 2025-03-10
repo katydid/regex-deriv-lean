@@ -1,3 +1,4 @@
+import Katydid.Std.Linter.DetectClassical
 import Katydid.Std.Lists
 
 namespace Language
