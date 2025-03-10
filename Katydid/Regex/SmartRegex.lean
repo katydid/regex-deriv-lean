@@ -1,3 +1,4 @@
+import Katydid.Std.Linter.DetectClassical
 import Katydid.Std.NonEmptyList
 
 import Katydid.Regex.Language

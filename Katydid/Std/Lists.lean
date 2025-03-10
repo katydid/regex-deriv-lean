@@ -6,6 +6,7 @@
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.SplitIfs
 
+import Katydid.Std.Linter.DetectClassical
 import Katydid.Std.BEq
 import Katydid.Std.Ordering
 import Katydid.Std.Nat

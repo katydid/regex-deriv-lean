@@ -1,3 +1,4 @@
+import Katydid.Std.Linter.DetectClassical
 import Katydid.Std.Ordering
 import Katydid.Std.Lists
 
