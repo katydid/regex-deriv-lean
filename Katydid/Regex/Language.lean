@@ -593,7 +593,7 @@ theorem simp_or_comm (r s: Lang α):
       exact Or.inl h
 
 theorem simp_or_assoc (r s t: Lang α):
-  or r (or s t) = or (or r s) t := by
+  or (or r s) t = or r (or s t) := by
   unfold or
   funext xs
   simp only [eq_iff_iff]
@@ -602,34 +602,58 @@ theorem simp_or_assoc (r s t: Lang α):
     intro h
     cases h with
     | inl h =>
-      left
-      left
-      exact h
-    | inr h =>
       cases h with
       | inl h =>
         left
-        right
         exact h
       | inr h =>
         right
+        left
         exact h
+    | inr h =>
+      right
+      right
+      exact h
   · case mpr =>
     intro h
     cases h with
     | inl h =>
+      left
+      left
+      exact h
+    | inr h =>
       cases h with
       | inl h =>
         left
+        right
         exact h
       | inr h =>
         right
-        left
         exact h
-    | inr h =>
-      right
-      right
-      exact h
+
+-- class Associative found in Init/Core.lean in namespace Std
+-- It is used by the ac_rfl tactic.
+instance IsAssociative_or {α: Type}: Std.Associative (@or α) :=
+  { assoc := @simp_or_assoc α }
+
+-- class Commutative found in Init/Core.lean in namespace Std
+-- It is used by the ac_rfl tactic.
+instance IsCommutative_or {α: Type}: Std.Commutative (@or α) :=
+  { comm := @simp_or_comm α }
+
+-- Test that ac_rfl uses the instance of Std.Commutative
+example (r s: Lang α):
+  or r s = or s r := by
+  ac_rfl
+
+-- Test that ac_rfl uses the instance of Std.Associative
+example (r s t: Lang α):
+  or (or r s) t = or r (or s t) := by
+  ac_rfl
+
+-- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative
+example (a b c d : Lang α):
+  (or a (or b (or c d))) = (or d (or (or b c) a)) := by ac_rfl
 
 theorem simp_and_emptyset_l_is_emptyset (r: Lang α):
   and emptyset r = emptyset := by
@@ -726,7 +750,7 @@ theorem simp_and_comm (r s: Lang α):
       exact And.intro hr hs
 
 theorem simp_and_assoc (r s t: Lang α):
-  and r (and s t) = and (and r s) t := by
+  and (and r s) t = and r (and s t) := by
   unfold and
   funext xs
   simp only [eq_iff_iff]
@@ -734,13 +758,37 @@ theorem simp_and_assoc (r s t: Lang α):
   case mp =>
     intro h
     match h with
-    | And.intro h1 (And.intro h2 h3) =>
-    exact And.intro (And.intro h1 h2) h3
+    | And.intro (And.intro h1 h2) h3 =>
+    exact And.intro h1 (And.intro h2 h3)
   case mpr =>
     intro h
     match h with
-    | And.intro (And.intro h1 h2) h3 =>
-    exact And.intro h1 (And.intro h2 h3)
+    | And.intro h1 (And.intro h2 h3) =>
+    exact And.intro (And.intro h1 h2) h3
+
+-- class Associative found in Init/Core.lean in namespace Std
+-- It is used by the ac_rfl tactic.
+instance IsAssociative_and {α: Type}: Std.Associative (@and α) :=
+  { assoc := @simp_and_assoc α }
+
+-- class Commutative found in Init/Core.lean in namespace Std
+-- It is used by the ac_rfl tactic.
+instance IsCommutative_and {α: Type}: Std.Commutative (@and α) :=
+  { comm := @simp_and_comm α }
+
+-- Test that ac_rfl uses the instance of Std.Commutative
+example (r s: Lang α):
+  and r s = and s r := by
+  ac_rfl
+
+-- Test that ac_rfl uses the instance of Std.Associative
+example (r s t: Lang α):
+  and (and r s) t = and r (and s t) := by
+  ac_rfl
+
+-- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative
+example (a b c d : Lang α):
+  (and a (and b (and c d))) = (and d (and (and b c) a)) := by ac_rfl
 
 theorem simp_not_not_is_double_negation (r: Lang α):
   not (not r) = r := by
