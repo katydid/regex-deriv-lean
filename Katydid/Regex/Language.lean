@@ -457,12 +457,33 @@ theorem simp_concat_emptystr_r_is_l (r: Lang α):
   simp only [emptystr, exists_and_left, exists_eq_left, append_nil, exists_eq_right']
 
 theorem simp_concat_assoc (r s t: Lang α):
-  concat r (concat s t) = concat (concat r s) t := by
+  concat (concat r s) t = concat r (concat s t) := by
   unfold concat
   funext xs
   simp only [eq_iff_iff]
   apply Iff.intro
   case mp =>
+    intro h
+    match h with
+    | Exists.intro xs1
+        (Exists.intro xs2
+          (And.intro
+            (Exists.intro xs3
+              (Exists.intro xs4
+                (And.intro rxs3
+                  (And.intro sxs4 xs1split))))
+            (And.intro txs2 xssplit))) =>
+    clear h
+    exists xs3
+    exists (xs4 ++ xs2)
+    split_ands
+    · exact rxs3
+    · exists xs4
+      exists xs2
+    · rw [xs1split] at xssplit
+      simp only [append_assoc] at xssplit
+      exact xssplit
+  case mpr =>
     intro h
     match h with
     | Exists.intro xs1
@@ -485,27 +506,16 @@ theorem simp_concat_assoc (r s t: Lang α):
     · rw [xs2split] at xssplit
       simp only [append_assoc]
       exact xssplit
-  case mpr =>
-    intro h
-    match h with
-    | Exists.intro xs1
-        (Exists.intro xs2
-          (And.intro
-            (Exists.intro xs3
-              (Exists.intro xs4
-                (And.intro rxs3
-                  (And.intro sxs4 xs1split))))
-            (And.intro txs2 xssplit))) =>
-    clear h
-    exists xs3
-    exists (xs4 ++ xs2)
-    split_ands
-    · exact rxs3
-    · exists xs4
-      exists xs2
-    · rw [xs1split] at xssplit
-      simp only [append_assoc] at xssplit
-      exact xssplit
+
+-- class Associative found in Init/Core.lean in namespace Std
+-- It is used by the ac_rfl tactic.
+instance IsAssociative_concat {α: Type}: Std.Associative (@concat α) :=
+  { assoc := @simp_concat_assoc α }
+
+-- Test that ac_rfl uses the instance of Std.Associative
+example (r s t: Lang α):
+  concat (concat r s) t = concat r (concat s t) := by
+  ac_rfl
 
 theorem simp_or_emptyset_l_is_r (r: Lang α):
   or emptyset r = r := by
