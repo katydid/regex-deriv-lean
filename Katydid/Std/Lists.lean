@@ -111,6 +111,10 @@ theorem list_app_assoc (xs ys zs: List α):
     apply (congrArg (cons head))
     exact ih
 
+theorem list_app_assoc' (xs ys zs: List α):
+  xs ++ (ys ++ zs) = (xs ++ ys) ++ zs := by
+  ac_rfl
+
 theorem list_app_assoc_singleton (xs ys: List α) (z: α):
   xs ++ (ys ++ [z]) = (xs ++ ys) ++ [z] := by
   apply list_app_assoc
