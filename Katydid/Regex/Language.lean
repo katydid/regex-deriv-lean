@@ -964,7 +964,7 @@ theorem simp_star_emptystr_is_emptystr {α: Type}:
     case zero =>
       rfl
     case more x xs1 xs2 hemptystr hstar hsplit =>
-      cases hemptystr
+      nomatch hemptystr
   case mpr =>
     intro h
     rw [h]
@@ -981,7 +981,7 @@ theorem simp_star_emptyset_is_emptystr {α: Type}:
     case zero =>
       rfl
     case more x xs1 xs2 hemptystr hstar hsplit =>
-      cases hemptystr
+      nomatch hemptystr
   case mpr =>
     intro h
     rw [h]
