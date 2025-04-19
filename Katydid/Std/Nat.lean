@@ -79,3 +79,20 @@ theorem nat_succ_gt_succ {n m: Nat}:
 theorem nat_succ_gt_succ' {n m: Nat}:
   succ n > succ m -> n > m := by
   apply Nat.le_of_succ_le_succ
+
+theorem nat_sub_zero {n: Nat}:
+  n - 0 = n := by
+  rfl
+
+theorem nat_zero_sub {n: Nat}:
+  (0 - n) = 0 := by
+  induction n with
+  | zero =>
+    rfl
+  | succ n ih =>
+    simp only [Nat.reduceSubDiff]
+    rw [ih]
+
+theorem nat_x_add_1_sub_y_add_1 {x y: Nat}:
+  x + 1 - (y + 1) = x - y := by
+  omega

@@ -448,8 +448,8 @@ theorem list_take_take (n: Nat) (xs: List α):
   revert m xs
   induction n with
   | zero =>
-        simp
-      | succ n ihn =>
+    simp only [take_zero, _root_.zero_le, inf_of_le_left, implies_true]
+  | succ n ihn =>
     intro m xs
     cases m with
     | zero =>
@@ -777,7 +777,7 @@ theorem list_prefix_leq_length (xs ys zs: List α):
     rw [hzs] at xsyszs
     rw [xsyszs]
     rw [list_length_split]
-    linarith
+    omega
 
 theorem list_drop_length_prefix_is_suffix (xs ys: List α):
   drop (length xs) (xs ++ ys) = ys := by
@@ -795,27 +795,52 @@ theorem list_drop_app_length (xs ys: List α):
 theorem list_drop_app (n: Nat) (xs ys: List α):
   drop n (xs ++ ys) = (drop n xs) ++ (drop (n - length xs) ys) := by
   induction xs generalizing n with
-  | nil => simp
+  | nil =>
+    rw [drop_nil]
+    rw [length_nil]
+    rw [nat_sub_zero]
+    rfl
   | cons x xs ih =>
     cases n with
-    | zero => simp
+    | zero =>
+      rw [drop]
+      rw [drop]
+      rw [nat_zero_sub]
+      rw [drop]
     | succ n =>
-      simp
-      exact ih n
+      rw [cons_append]
+      rw [drop]
+      rw [drop]
+      rw [length]
+      rw [nat_x_add_1_sub_y_add_1]
+      apply ih
 
 -- list_drop_app's alternative proof using revert instead of generalizing
 theorem list_drop_app' (n: Nat) (xs ys: List α):
   drop n (xs ++ ys) = (drop n xs) ++ (drop (n - length xs) ys) := by
   revert n
   induction xs with
-  | nil => simp
+  | nil =>
+    intro n
+    rw [drop_nil]
+    rw [length_nil]
+    rw [nat_sub_zero]
+    rfl
   | cons x xs ih =>
     intro n
     cases n with
-    | zero => simp
+    | zero =>
+      rw [drop]
+      rw [drop]
+      rw [nat_zero_sub]
+      rw [drop]
     | succ n =>
-      simp
-      exact ih n
+      rw [drop]
+      rw [length]
+      rw [nat_x_add_1_sub_y_add_1]
+      rw [cons_append]
+      rw [drop]
+      rw [ih]
 
 theorem list_take_length_prefix_is_prefix (xs ys: List α):
   take (length xs) (xs ++ ys) = xs := by
