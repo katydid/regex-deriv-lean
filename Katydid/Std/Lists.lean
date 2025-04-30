@@ -603,26 +603,7 @@ theorem list_take_large_length {n: Nat} {xs: List α}:
 
 theorem list_take_length (n: Nat) (xs: List α):
   length (take n xs) = min n (length xs) := by
-  -- TODO: redo this proof without such intrusive unfolds
-  unfold min
-  unfold instMin_mathlib
-  unfold inferInstance
-  unfold instMinNat
-  unfold minOfLe
-  simp only [length_take, ge_iff_le]
-  split
-  next =>
-    rename_i c
-    -- TODO: redo this proof without such intrusive unfolds
-    unfold min; unfold instMinNat; unfold minOfLe; simp only [ite_eq_left_iff, not_le]
-    intro c'
-    linarith
-  next =>
-    rename_i c
-    -- TODO: redo this proof without such intrusive unfolds
-    unfold min; unfold instMinNat; unfold minOfLe; simp only [ite_eq_right_iff]
-    intro c''
-    linarith
+  simp only [List.length_take]
 
 theorem list_drop_length (n: Nat) (xs: List α):
   length (drop n xs) = length xs - n := by
