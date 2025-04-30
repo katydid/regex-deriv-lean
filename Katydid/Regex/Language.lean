@@ -790,39 +790,24 @@ example (r s t: Lang α):
 example (a b c d : Lang α):
   (and a (and b (and c d))) = (and d (and (and b c) a)) := by ac_rfl
 
-theorem simp_not_not_is_double_negation (r: Lang α):
-  not (not r) = r := by
-  unfold not
-  simp only [not_not]
+theorem not_not_intro' {p : Prop} (h : p) : ¬ ¬ p :=
+  fun hn : (p -> False) => hn h
 
-theorem simp_not_and_demorgen (r s: Lang α):
-  not (and r s) = or (not r) (not s) := by
+theorem simp_not_not_is_double_negation
+  (r: Lang α) (xs: List α) [Decidable (r xs)]:
+  not (not r) xs = r xs := by
   unfold not
+  simp only [eq_iff_iff]
+  exact Decidable.not_not
+
+theorem simp_not_and_demorgen
+  (r s: Lang α) (xs: List α) [Decidable (r xs)] [Decidable (s xs)]:
+  not (and r s) xs = or (not r) (not s) xs := by
   unfold and
   unfold or
-  unfold Not
-  funext xs
-  simp only [not_and, eq_iff_iff]
-  apply Iff.intro
-  case mp =>
-    intro h
-    contrapose h
-    simp only [imp_false, not_or, not_not] at h
-    unfold Not
-    intro h'
-    apply h'
-    exact h
-  case mpr =>
-    intro h
-    intro hrs
-    cases hrs with
-    | intro hr hs =>
-    simp only [imp_false] at h
-    cases h with
-    | inl h =>
-      contradiction
-    | inr h =>
-      contradiction
+  unfold not
+  simp only [eq_iff_iff]
+  exact Decidable.not_and_iff_or_not_not
 
 theorem simp_not_or_demorgen (r s: Lang α):
   not (or r s) = and (not r) (not s) := by
