@@ -47,15 +47,8 @@ def Lists.eraseReps [BEq α] (xs: List α): List α :=
     then Lists.eraseReps (x2::xs)
     else x1 :: List.eraseReps (x2::xs)
 
-def Lists.mergeReps [BEq α] [Ord α] (xs ys: List α): List α :=
-  match xs, ys with
-  | [], ys => ys
-  | xs, [] => xs
-  | x :: xs, y :: ys =>
-    match Ord.compare x y with
-    | Ordering.eq => Lists.mergeReps xs (y::ys)
-    | Ordering.lt => x :: Lists.mergeReps xs (y::ys)
-    | Ordering.gt => y :: Lists.mergeReps (x::xs) ys
+def Lists.mergeReps [BEq α] [Ord α] (xs: List α) (ys: List α): List α :=
+  Lists.eraseReps (Lists.merge xs ys)
 
 theorem list_cons_ne_nil (x : α) (xs : List α):
   x :: xs ≠ [] := by
@@ -453,66 +446,20 @@ theorem list_take_take (n: Nat) (xs: List α):
     intro m xs
     cases m with
     | zero =>
-      -- TODO: redo this proof without such intrusive unfolds
-      unfold min
-      unfold instMin_mathlib
-      unfold inferInstance
-      unfold instMinNat
-      unfold minOfLe
+      rw [nat_zero_min]
       rw [take]
       simp only [take]
     | succ m =>
-      -- TODO: redo this proof without such intrusive unfolds
-      unfold min
-      unfold instMin_mathlib
-      unfold inferInstance
-      unfold instMinNat
-      unfold minOfLe
-      simp only
-      split
-      next h =>
-        rw [nat_succ_le_succ_iff] at h
-        cases xs with
-        | nil =>
-          rw [take]
-        | cons x xs =>
-          repeat rw [take]
-          apply (congrArg (cons x))
-          have hmin : min n m = n := by
-            -- TODO: redo this proof without such intrusive unfolds
-            unfold min
-            unfold instMin_mathlib
-            unfold inferInstance
-            unfold instMinNat
-            unfold minOfLe
-            simp only [ite_eq_left_iff, not_le]
-            intro hless
-            linarith
-          have ihn' : _ := @ihn m xs
-          rw [hmin] at ihn'
-          exact ihn'
-      next h =>
-        rw [nat_succ_le_succ_iff] at h
-        cases xs with
-        | nil =>
-          rw [take]
-          apply list_take_nil
-        | cons x xs =>
-          repeat rw [take]
-          apply (congrArg (cons x))
-          have hmin : min n m = m := by
-            -- TODO: redo this proof without such intrusive unfolds
-            unfold min
-            unfold instMin_mathlib
-            unfold inferInstance
-            unfold instMinNat
-            unfold minOfLe
-            simp only [ite_eq_right_iff]
-            intro hless
-            linarith
-          have ihn' : _ := @ihn m xs
-          rw [hmin] at ihn'
-          exact ihn'
+      cases xs with
+      | nil =>
+        repeat rw [take]
+        rw [list_take_nil]
+      | cons x xs =>
+        repeat rw [take]
+        rw [nat_min_succ]
+        rw [take]
+        apply (congrArg (cons x))
+        apply ihn
 
 theorem list_drop_O (xs: List α):
   drop 0 xs = xs := by

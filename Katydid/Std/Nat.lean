@@ -40,6 +40,26 @@ theorem nat_min_zero {n: Nat}: min 0 n = 0 :=
 theorem nat_zero_min {n: Nat}: min n 0 = 0 :=
   Nat.min_eq_right (Nat.zero_le _)
 
+theorem nat_min_succ' {n: Nat}: min (n + 1) (m + 1) = (min n m) + 1 := by
+  unfold min
+  unfold instMin_mathlib
+  unfold inferInstance
+  unfold instMinNat
+  unfold minOfLe
+  simp only
+  split
+  next h =>
+    rw [nat_succ_le_succ_iff] at h
+    split_ifs
+    omega
+  next h =>
+    rw [nat_succ_le_succ_iff] at h
+    split_ifs
+    omega
+
+theorem nat_min_succ {n: Nat}: min (n + 1) (m + 1) = (min n m) + 1 := by
+  omega
+
 theorem nat_add_succ_is_succ_add (n m: Nat): succ n + m = succ (n + m) := by
   cases n with
   | zero =>
