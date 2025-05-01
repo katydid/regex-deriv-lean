@@ -26,6 +26,12 @@ local elab "list_empty_matcher" : tactic => newTactic do
   | ~q($x :: $xs ≠ []) =>
     -- x :: xs ≠ []
     run `(tactic| apply list_cons_ne_nil )
+  | ~q([$x] ++ $xs ≠ []) =>
+    -- [x] ++ xs ≠ []
+    run `(tactic| apply list_append_ne_nil )
+  | ~q($xs ++ [$x] ≠ []) =>
+    -- xs ++ [x] ≠ []
+    run `(tactic| apply list_append_nil_ne )
   | _ =>
     let hyps ← getHypothesesProp
     for (name, ty) in hyps do
@@ -160,6 +166,11 @@ local elab "list_single_matcher" : tactic => newTactic do
       | ~q([] = $xs ++ ($y :: $ys)) =>
         -- [] = xs ++ y :: ys -> False
         _ ← mkHyp (toString name) `(list_nil_ne_app_cons _ _ _ $name)
+        run `(tactic| contradiction )
+        return true
+      | ~q($xs ++ ($y :: $ys) = []) =>
+        -- xs ++ y :: ys = [] -> False
+        _ ← mkHyp (toString name) `(list_app_cons_ne_nil _ _ _ $name)
         run `(tactic| contradiction )
         return true
       | ~q($xs ++ [$x] = $ys ++ [$y]) =>
@@ -479,14 +490,14 @@ example: ∀ (x y z: α),
 intro x y z
 balistic
 
-
 example: ∀ (x y: α) (xs ys zs xs': List α),
   x ≠ y ->
   xs ++ ys ++ zs = xs' ++ [x] ->
   zs ≠ [y] := by
 intro x y xs ys zs xs' xy H
--- TODO: balistic should be able to do this with list_cons_neq
-sorry
+intro zsy
+subst_vars
+balistic
 
 example:
   ∀ (x y: α) (_nxy: x ≠ y) (_xy: y = x), False := by
@@ -501,14 +512,20 @@ intro x y xy xs H
 balistic
 
 example:
-  ∀ (x y: α) (xy: x ≠ y) (xs: List α),
+  ∀ (x y: α) (_xy: x ≠ y) (xs: List α),
   xs ++ [x] ++ [y] ≠ [y] ++ [y] ++ [y] ++ [x] := by
-sorry
+intro x y nxy xs h
+balistic
 
 example:
-  ∀ (x y: α) (xy: x ≠ y) (xs: List α),
+  ∀ (x y: α) (_xy: x ≠ y) (xs: List α),
   [y] ++ [y] ++ xs ≠ [x] := by
-intro x y xy xs H
+intro x y xy xs h
 balistic
--- TODO: balistic should be able to do this with list_cons_neq
-sorry
+cases h <;> balistic
+
+example:
+  ∀ (xs: List α) (x: α),
+  xs ++ [x] ≠ [] := by
+intro xs x
+balistic
