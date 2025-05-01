@@ -260,16 +260,6 @@ theorem validate_commutes {α: Type} (r: Regex α) (xs: List α):
   rw [<- null_commutes]
 
 -- decidableDenote shows that the derivative algorithm is decidable
-def decidableDenote (r: Regex α): DecidablePred (denote r) := by
-  unfold DecidablePred
-  intro xs
-  rw [<- validate_commutes]
-  cases (validate r xs)
-  · simp only [Bool.false_eq_true]
-    apply Decidable.isFalse
-    simp only [not_false_eq_true]
-  · simp only
-    apply Decidable.isTrue
-    exact True.intro
-
-#print axioms decidableDenote
+-- https://leanprover.zulipchat.com/#narrow/channel/270676-lean4/topic/restricting.20axioms
+def decidableDenote (r: Regex α): DecidablePred (denote r) :=
+  fun xs => decidable_of_decidable_of_eq (validate_commutes r xs)
