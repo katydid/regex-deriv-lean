@@ -500,96 +500,131 @@ def derive (r: Regex α) (a: α): Regex α :=
   | Regex.star x =>
       SmartRegex.smartConcat (derive x a) (Regex.star x)
 
+lemma derive_commutes_emptyset {x: α}:
+  denote (derive Regex.emptyset x) = Language.derive (denote Regex.emptyset) x := by
+  funext xs
+  simp only [denote, Language.emptyset, Language.derive, Language.derives]
+
+lemma derive_commutes_emptystr {x: α}:
+  denote (derive Regex.emptystr x) = Language.derive (denote Regex.emptystr) x := by
+  funext xs
+  simp only [
+    denote,
+    Language.emptyset, Language.derive, Language.derives, Language.emptystr,
+    singleton_append,
+    reduceCtorEq,
+  ]
+
+lemma derive_commutes_pred {p: Predicate α} {x: α}:
+  denote (derive (Regex.pred p) x) = Language.derive (denote (Regex.pred p)) x := by
+  funext xs
+  simp only [derive, Language.derive, Language.derives, denote, singleton_append, eq_iff_iff]
+  rw [onlyif', Language.pred]
+  split_ifs with h
+  · rw [denote]
+    simp only [Language.emptystr, cons.injEq]
+    apply Iff.intro
+    · intro hxs
+      use x
+    · intro ⟨w, hxs, hp⟩
+      exact hxs.right
+  · rw [denote]
+    simp only [Language.emptyset, cons.injEq, false_iff, not_exists, not_and, and_imp, forall_eq']
+    intro _ h'
+    contradiction
+
+lemma derive_commutes_or {r1 r2: Regex α} {x: α}
+  (ih1: denote (derive r1 x) = Language.derive (denote r1) x)
+  (ih2: denote (derive r2 x) = Language.derive (denote r2) x):
+  denote (derive (Regex.or r1 r2) x) = Language.derive (denote (r1.or r2)) x := by
+  funext xs
+  simp only [derive, Language.derive, Language.derives, denote, Language.or, singleton_append,
+    eq_iff_iff]
+  rw [←smartOr_is_or, denote, Language.or]
+  rw [ih1, ih2]
+  rfl
+
+lemma derive_commutes_concat {r1 r2: Regex α} {x: α}
+  (ih1 : denote (derive r1 x) = Language.derive (denote r1) x)
+  (ih2 : denote (derive r2 x) = Language.derive (denote r2) x):
+  denote (derive (r1.concat r2) x) = Language.derive (denote (r1.concat r2)) x := by
+  funext xs
+  simp [derive, denote]
+  rw [←smartOr_is_or, denote, Language.or]
+  rw [←smartConcat_is_concat]
+  simp only [denote, Language.concat, exists_and_left]
+  apply Iff.intro
+  · intro h
+    match h with
+    | Or.inl ⟨ys, h, zs, h', hxs⟩ =>
+      rw [ih1] at h
+      rw [Language.derive, Language.derives, singleton_append] at h
+      refine ⟨x::ys, h, zs, h', ?_⟩
+      rw [hxs, cons_append]
+    | Or.inr h =>
+      rw [onlyif] at h
+      split_ifs at h with hn
+      · rw [null_commutes, Language.null] at hn
+        rw [ih2] at h
+        rw [Language.derive, Language.derives, singleton_append] at h
+        refine ⟨[], hn, x::xs, h, ?_⟩
+        rw [nil_append]
+      · simp only [denote, Language.emptyset] at h
+  · intro ⟨ys, h, zs, h', hxs⟩
+    rw [ih1]
+    simp only [Language.derive, Language.derives, singleton_append]
+    cases ys with
+    | nil =>
+      rw [nil_append] at hxs
+      rw [onlyif]
+      split_ifs with hn
+      · rw [ih2]
+        rw [Language.derive, Language.derives, singleton_append, hxs]
+        exact Or.inr h'
+      · rw [null_commutes, Language.null] at hn
+        contradiction
+    | cons w ws =>
+      rw [cons_append, cons.injEq] at hxs
+      rw [hxs.left]
+      exact Or.inl ⟨ws, h, zs, h', hxs.right⟩
+
+lemma derive_commutes_star {r: Regex α} {x: α}
+  (ih : denote (derive r x) = Language.derive (denote r) x):
+  denote (derive r.star x) = Language.derive (denote r.star) x := by
+  funext xs
+  simp [derive, denote]
+  rw [←smartConcat_is_concat]
+  simp only [denote, Language.concat, exists_and_left]
+  apply Iff.intro
+  · intro ⟨ys, h, zs, h', hxs⟩
+    rw [ih] at h
+    rw [Language.derive, Language.derives, singleton_append] at h
+    apply Language.star.more x ys zs
+    rw [hxs, cons_append]
+    exact h
+    exact h'
+  · intro h
+    cases h with
+    | more y ys zs _ hxs h h'  =>
+      rw [cons_append, cons.injEq] at hxs
+      rw [ih, hxs.left]
+      exact ⟨ys, h, zs, h', hxs.right⟩
+
 theorem derive_commutes {α: Type} (r: Regex α) (x: α):
   denote (derive r x) = Language.derive (denote r) x := by
-  cases r with
+  induction r with
   | emptyset =>
-    funext xs
-    simp [derive, denote]
+    exact derive_commutes_emptyset
   | emptystr =>
-    funext xs
-    simp [derive, denote]
+    exact derive_commutes_emptystr
   | pred p =>
-    funext xs
-    simp [derive, denote]
-    rw [onlyif', Language.pred]
-    split_ifs with h
-    · rw [denote]
-      simp only [Language.emptystr, cons.injEq]
-      apply Iff.intro
-      · intro hxs
-        use x
-      · intro ⟨w, hxs, hp⟩
-        exact hxs.right
-    · rw [denote]
-      simp
-      intro _ h'
-      contradiction
-  | or r₁ r₂ =>
-    funext xs
-    simp [derive, denote]
-    rw [←smartOr_is_or, denote, Language.or]
-    rw [derive_commutes, derive_commutes]
-    rfl
-  | concat r₁ r₂ =>
-    funext xs
-    simp [derive, denote]
-    rw [←smartOr_is_or, denote, Language.or]
-    rw [←smartConcat_is_concat]
-    simp only [denote, Language.concat, exists_and_left]
-    apply Iff.intro
-    · intro h
-      match h with
-      | Or.inl ⟨ys, h, zs, h', hxs⟩ =>
-        rw [derive_commutes] at h
-        rw [Language.derive, Language.derives, singleton_append] at h
-        refine ⟨x::ys, h, zs, h', ?_⟩
-        rw [hxs, cons_append]
-      | Or.inr h =>
-        rw [onlyif] at h
-        split_ifs at h with hn
-        · rw [null_commutes, Language.null] at hn
-          rw [derive_commutes] at h
-          rw [Language.derive, Language.derives, singleton_append] at h
-          refine ⟨[], hn, x::xs, h, ?_⟩
-          rw [nil_append]
-        · simp only [denote, Language.emptyset] at h
-    · intro ⟨ys, h, zs, h', hxs⟩
-      rw [derive_commutes]
-      simp only [Language.derive, Language.derives, singleton_append]
-      cases ys with
-      | nil =>
-        rw [nil_append] at hxs
-        rw [onlyif]
-        split_ifs with hn
-        · rw [derive_commutes]
-          rw [Language.derive, Language.derives, singleton_append, hxs]
-          exact Or.inr h'
-        · rw [null_commutes, Language.null] at hn
-          contradiction
-      | cons w ws =>
-        rw [cons_append, cons.injEq] at hxs
-        rw [hxs.left]
-        exact Or.inl ⟨ws, h, zs, h', hxs.right⟩
-  | star r =>
-    funext xs
-    simp [derive, denote]
-    rw [←smartConcat_is_concat]
-    simp only [denote, Language.concat, exists_and_left]
-    apply Iff.intro
-    · intro ⟨ys, h, zs, h', hxs⟩
-      rw [derive_commutes] at h
-      rw [Language.derive, Language.derives, singleton_append] at h
-      apply Language.star.more x ys zs
-      rw [hxs, cons_append]
-      exact h
-      exact h'
-    · intro h
-      cases h with
-      | more y ys zs _ hxs h h'  =>
-        rw [cons_append, cons.injEq] at hxs
-        rw [derive_commutes, hxs.left]
-        exact ⟨ys, h, zs, h', hxs.right⟩
+    exact derive_commutes_pred
+  | or r1 r2 ih1 ih2 =>
+    exact derive_commutes_or ih1 ih2
+  | concat r1 r2 ih1 ih2 =>
+    exact derive_commutes_concat ih1 ih2
+  | star r ih =>
+    exact derive_commutes_star ih
 
 def derives (r: Regex α) (xs: List α): Regex α :=
   (List.foldl derive r) xs
@@ -626,14 +661,5 @@ theorem validate_commutes {α: Type} (r: Regex α) (xs: List α):
 
 -- decidableDenote shows that the derivative algorithm is decidable
 -- copy of SimpleRegex.decidableDenote
-def decidableDenote (r: Regex α): DecidablePred (denote r) := by
-  unfold DecidablePred
-  intro xs
-  rw [<- validate_commutes]
-  cases (validate r xs)
-  · simp only [Bool.false_eq_true]
-    apply Decidable.isFalse
-    simp only [not_false_eq_true]
-  · simp only
-    apply Decidable.isTrue
-    exact True.intro
+def decidableDenote (r: Regex α): DecidablePred (denote r) :=
+  fun xs => decidable_of_decidable_of_eq (validate_commutes r xs)
