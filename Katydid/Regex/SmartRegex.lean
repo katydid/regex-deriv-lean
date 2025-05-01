@@ -31,7 +31,9 @@ inductive Predicate (α: Type) where
   | mk
     (desc: String)
     (func: α -> Prop)
-  : [DecidablePred func] -> [Ord α] -> Predicate α
+    [decidablePred: DecidablePred func]
+    [ord: Ord α]
+  : Predicate α
 
 def Predicate.desc {α: Type} (p: Predicate α): String :=
   match p with
@@ -313,39 +315,21 @@ def orToList (x: Regex α): NonEmptyList (Regex α) :=
   | _ =>
     NonEmptyList.mk x []
 
+private def orFromList' (x1: Regex α) (xs: List (Regex α)): Regex α :=
+  match xs with
+  | [] => x1
+  | (x2::xs') => Regex.or x1 (orFromList' x2 xs')
+
 def orFromList (xs: NonEmptyList (Regex α)): Regex α :=
   match xs with
-  | NonEmptyList.mk x1 [] =>
-    x1
-  | NonEmptyList.mk x1 (x2::xs) =>
-    Regex.or x1 (orFromList (NonEmptyList.mk x2 xs))
-
-private theorem orFromList_is_or_nonEmptyList (x1 x2: Regex α) (xs: List (Regex α)):
-  orFromList (NonEmptyList.mk x1 (x2 :: xs)) = Regex.or x1 (orFromList (NonEmptyList.mk x2 xs )) := by
-  simp only [orFromList]
-
-private theorem orFromList_cons_NonEmptyList_is_or (x1: Regex α) (xs2: NonEmptyList (Regex α)):
-  orFromList (NonEmptyList.cons x1 xs2) = Regex.or x1 (orFromList xs2) := by
-  unfold orFromList
-  unfold NonEmptyList.cons
-  simp only [Regex.or.injEq, true_and]
-  cases xs2 with
-  | mk head tail =>
-  cases tail with
-  | nil =>
-    simp only
-    unfold orFromList
-    rfl
-  | cons t1 t2 =>
-    simp only
-    rw [orFromList_is_or_nonEmptyList]
+  | NonEmptyList.mk x1 xs' => orFromList' x1 xs'
 
 theorem orToList_is_orFromList (x: Regex α):
   orFromList (orToList x) = x := by
-  induction x <;> (try simp only [orToList, orFromList])
+  induction x <;> (try simp only [orToList, orFromList, orFromList'])
   · case or x1 x2 ih1 ih2 =>
-    rw [orFromList_cons_NonEmptyList_is_or]
-    rw [ih2]
+    rw [NonEmptyList.cons_head]
+    congr
 
 theorem simp_pred_any_is_any:
   denote (Regex.pred (@Predicate.mkAny α o)) = Language.any := by

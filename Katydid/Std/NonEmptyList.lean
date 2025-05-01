@@ -21,6 +21,10 @@ instance [Ord α] : Ord (NonEmptyList α) where
 def cons (x: α) (xs: NonEmptyList α): NonEmptyList α :=
   NonEmptyList.mk x (xs.head :: xs.tail)
 
+theorem cons_head {x: α} {xs: NonEmptyList α}:
+  (NonEmptyList.cons x xs).head = x := by
+  rw [NonEmptyList.cons]
+
 def toList (xs: NonEmptyList α): List α :=
   match xs with
   | NonEmptyList.mk head tail =>
