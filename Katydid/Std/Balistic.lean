@@ -10,11 +10,6 @@ open Qq
 -- see https://github.com/leanprover-community/quote4/issues/52
 set_option linter.constructorNameAsVariable false
 
--- TODO: incorporate ac_rfl into balistic
--- ac_rfl uses IsAssociative to prove associativity of operators
-example (xs ys zs: List α): (xs ++ ys ++ zs) = (xs ++ ys) ++ zs := by
-  ac_rfl
-
 -- list_empty_matcher is a tactic that tries to solve simple theorems about empty lists
 -- Reference for list tactic in Coq: https://github.com/katydid/proofs/blob/old-coq/src/CoqStock/Listerine.v#L59-L107
 local elab "list_empty_matcher" : tactic => newTactic do
@@ -273,7 +268,12 @@ example (xs ys zs: List α) (y z: α) (H: xs ++ (ys ++ [y]) = zs ++ [z]): y = z 
 -- list_app_inv_head: xs ++ ys = xs ++ zs -> ys = zs
 -- list_app_inv_tail: xs ++ zs = ys ++ zs -> xs = ys
 local elab "list_app" : tactic => newTactic do
-  run `(tactic| simp )
+  run `(tactic| simp only [
+    list_app_inv_head,
+    list_app_inv_tail,
+    List.append_cancel_left_eq, imp_self,
+    List.append_cancel_right_eq, imp_self,
+  ])
 
 example (xs ys zs: List α):
   xs ++ ys = xs ++ zs -> ys = zs := by
@@ -418,12 +418,11 @@ elab "balistic" : tactic => newTactic do
     | list_single
     | list_app_uncons
     | wreck_conj
-  ) <;> (try assumption)
-    <;> subst_vars
-    <;> (try simp)
-    <;> (try exact ⟨rfl, rfl⟩)
-    <;> (try contradiction)
-  )
+    | assumption
+    | ac_rfl
+    | contradiction
+    | trivial
+  ))
 
 example: ∀ (x y: List α) (a: α),
     [] ≠ x ++ a :: y := by
@@ -490,12 +489,15 @@ example: ∀ (x y z: α),
 intro x y z
 balistic
 
+
 example: ∀ (x y: α) (xs ys zs xs': List α),
   x ≠ y ->
   xs ++ ys ++ zs = xs' ++ [x] ->
   zs ≠ [y] := by
 intro x y xs ys zs xs' xy H
 intro zsy
+subst_vars
+balistic
 subst_vars
 balistic
 
@@ -509,6 +511,8 @@ example:
   ∀ (x y: α) (_xy: x ≠ y) (xs: List α),
   xs ++ [x] ++ [y] ≠ [y] ++ [x] := by
 intro x y xy xs H
+balistic
+subst_vars
 balistic
 
 example:
@@ -529,3 +533,11 @@ example:
   xs ++ [x] ≠ [] := by
 intro xs x
 balistic
+
+-- ac_rfl uses IsAssociative to prove associativity of operators
+example (xs ys zs: List α): (xs ++ ys ++ zs) = (xs ++ ys) ++ zs := by
+  ac_rfl
+
+-- test that ac_rfl is part of balistic
+example (xs ys zs: List α): (xs ++ ys ++ zs) = (xs ++ ys) ++ zs := by
+  balistic
