@@ -294,7 +294,7 @@ theorem derive_iff_pred {α: Type} {p: α -> Prop} {x: α} {xs: List α}:
     simp only [cons.injEq, true_and]
     exact And.intro hxs hpx
 
-theorem derive_pred {α: Type} {p: α -> Prop} [dp: DecidablePred p] {x: α}:
+theorem derive_pred {α: Type} {p: α -> Prop} [DecidablePred p] {x: α}:
   (derive (pred p) x) = (onlyif (p x) emptystr) := by
   funext
   rw [derive_iff_pred]
@@ -1019,3 +1019,25 @@ theorem simp_star_any_is_universal {α: Type}:
       · unfold any
         exists x
       · exact ih
+
+def onlyif_true {cond: Prop} {l: List α -> Prop} (condIsTrue: cond):
+  Language.onlyif cond l = l := by
+  unfold Language.onlyif
+  funext xs
+  simp only [eq_iff_iff, and_iff_right_iff_imp]
+  intro p
+  assumption
+
+def onlyif_false {cond: Prop} {l: List α -> Prop} (condIsFalse: ¬cond):
+  Language.onlyif cond l = Language.emptyset := by
+  funext xs
+  rw [eq_iff_iff]
+  apply Iff.intro
+  case mp =>
+    intro h
+    cases h
+    case intro condIsTrue lxs =>
+    contradiction
+  case mpr =>
+    intro h
+    nomatch h
