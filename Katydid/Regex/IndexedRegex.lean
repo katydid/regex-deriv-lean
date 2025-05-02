@@ -10,7 +10,7 @@ open List
 inductive Regex (α: Type): (List α -> Prop) -> Type where
   | emptyset : Regex α Language.emptyset
   | emptystr : Regex α Language.emptystr
-  | pred : (p: α -> Prop) → [DecidablePred p] → Regex α (Language.pred a)
+  | pred : (p: α -> Prop) → [DecidablePred p] → Regex α (Language.pred p)
   | or : Regex α x → Regex α y → Regex α (Language.or x y)
   | concat : Regex α x → Regex α y → Regex α (Language.concat x y)
   | star : Regex α x → Regex α (Language.star x)
@@ -64,22 +64,20 @@ def onlyif_false {cond: Prop} {l: List α -> Prop} (condIsFalse: ¬cond):
     nomatch h
 
 -- | scalar {s: Type u}: (Decidability.Dec s) -> Lang P -> Lang (Language.scalar s P)
-def onlyif (cond: Prop) [dcond: Decidable cond] (r: Regex α l): Regex α (Language.onlyif cond l) := by
+def onlyif {cond: Prop} (dcond: Decidable cond) (r: Regex α l): Regex α (Language.onlyif cond l) :=
   match dcond with
   | isTrue h =>
-    exact iso (onlyif_true h) r
+    iso (onlyif_true h) r
   | isFalse h =>
-    exact iso (onlyif_false h) Regex.emptyset
+    iso (onlyif_false h) Regex.emptyset
 
 def derive (r: Regex α l) (a: α): Regex α (Language.derive l a) :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr =>
     iso Language.derive_emptystr Regex.emptyset
-  | Regex.pred p =>
-    -- TODO
-    -- iso Language.derive_pred (onlyif p Regex.emptystr)
-    sorry
+  | @Regex.pred _ p dp =>
+    iso Language.derive_pred (onlyif (dp a) Regex.emptystr)
   | Regex.or x y =>
     iso Language.derive_or (Regex.or (derive x a) (derive y a))
   | Regex.concat x y =>

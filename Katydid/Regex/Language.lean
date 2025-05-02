@@ -294,7 +294,7 @@ theorem derive_iff_pred {α: Type} {p: α -> Prop} {x: α} {xs: List α}:
     simp only [cons.injEq, true_and]
     exact And.intro hxs hpx
 
-theorem derive_pred {α: Type} {p: α -> Prop} [DecidablePred p] {x: α}:
+theorem derive_pred {α: Type} {p: α -> Prop} [dp: DecidablePred p] {x: α}:
   (derive (pred p) x) = (onlyif (p x) emptystr) := by
   funext
   rw [derive_iff_pred]
