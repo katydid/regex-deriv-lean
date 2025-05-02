@@ -1,7 +1,8 @@
 # Thunk
 
-A Thunk is function that takes no parameters and returns a value.
+A thunk is function that takes no parameters and returns a value.
 It is a way to enforce lazy evaluation.
+Lean includes `Thunk` type in the standard libary.
 The `get` method is use to force the evaluation and return the argument.
 
 Here is an example of creating a Thunk that returns an Ordering type and some proofs about it:
