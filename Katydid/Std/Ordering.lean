@@ -17,6 +17,9 @@ theorem lex_assoc:
   intros a b c
   cases a <;> simp [lex]
 
+instance IsAssociative_Ordering: Std.Associative lex :=
+  { assoc := lex_assoc }
+
 theorem lex_assoc' (a b c: Ordering):
   lex (lex a b) c = lex a (lex b c) := by
   cases a

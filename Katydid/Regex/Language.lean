@@ -641,6 +641,11 @@ instance IsAssociative_or {α: Type}: Std.Associative (@or α) :=
 instance IsCommutative_or {α: Type}: Std.Commutative (@or α) :=
   { comm := @simp_or_comm α }
 
+-- class IdempotentOp found in Init/Core.lean in namespace Std
+-- It is used by the ac_rfl tactic.
+instance IsIdempotentOp_or {α: Type}: Std.IdempotentOp (@or α) :=
+  { idempotent := simp_or_idemp }
+
 -- Test that ac_rfl uses the instance of Std.Commutative
 example (r s: Lang α):
   or r s = or s r := by
@@ -651,9 +656,18 @@ example (r s t: Lang α):
   or (or r s) t = or r (or s t) := by
   ac_rfl
 
+-- Test that ac_rfl uses the instance of Std.IdempotentOp
+example (r: Lang α):
+  or (or r r) r = r := by
+  ac_rfl
+
 -- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative
 example (a b c d : Lang α):
   (or a (or b (or c d))) = (or d (or (or b c) a)) := by ac_rfl
+
+-- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative and Std.IdempotentOp
+example (a b c d : Lang α):
+  (or a (or b (or c d))) = (or a (or d (or (or b c) a))) := by ac_rfl
 
 theorem simp_and_emptyset_l_is_emptyset (r: Lang α):
   and emptyset r = emptyset := by
@@ -776,6 +790,11 @@ instance IsAssociative_and {α: Type}: Std.Associative (@and α) :=
 instance IsCommutative_and {α: Type}: Std.Commutative (@and α) :=
   { comm := @simp_and_comm α }
 
+-- class IdempotentOp found in Init/Core.lean in namespace Std
+-- It is used by the ac_rfl tactic.
+instance IsIdempotentOp_and {α: Type}: Std.IdempotentOp (@and α) :=
+  { idempotent := simp_and_idemp }
+
 -- Test that ac_rfl uses the instance of Std.Commutative
 example (r s: Lang α):
   and r s = and s r := by
@@ -786,9 +805,18 @@ example (r s t: Lang α):
   and (and r s) t = and r (and s t) := by
   ac_rfl
 
+-- Test that ac_rfl uses the instance of Std.IdempotentOp
+example (r: Lang α):
+  and r (and r r) = r := by
+  ac_rfl
+
 -- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative
 example (a b c d : Lang α):
   (and a (and b (and c d))) = (and d (and (and b c) a)) := by ac_rfl
+
+-- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative and Std.IdempotentOp
+example (a b c d : Lang α):
+  (and a (and b (and c d))) = (and d (and d (and (and b c) a))) := by ac_rfl
 
 theorem not_not_intro' {p : Prop} (h : p) : ¬ ¬ p :=
   fun hn : (p -> False) => hn h

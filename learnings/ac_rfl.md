@@ -102,6 +102,37 @@ example (a b c d : Lang α):
   (or a (or b (or c d))) = (or d (or (or b c) a)) := by ac_rfl
 ```
 
+## IdempotentOp
+
+`ac_rfl` also uses another class for idempotent operators, like `or`:
+`IdempotentOp` is a class found in Init/Core.lean in the `Std` namespace:
+
+```lean
+class IdempotentOp (op : α → α → α) : Prop where
+  /-- An idempotent operation satisfies `a ∘ a = a`. -/
+  idempotent : (x : α) → op x x = x
+```
+
+We can instantiate this class for `or` too:
+
+```lean
+instance IsIdempotentOp_or {α: Type}: Std.IdempotentOp (@or α) :=
+  { idempotent := simp_or_idemp }
+```
+
+And then use it to prove the following theorems:
+
+```lean
+-- Test that ac_rfl uses the instance of Std.IdempotentOp
+example (r: Lang α):
+  or (or r r) r = r := by
+  ac_rfl
+
+-- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative and Std.IdempotentOp
+example (a b c d : Lang α):
+  (or a (or b (or c d))) = (or a (or d (or (or b c) a))) := by ac_rfl
+```
+
 ## References
 
 * [ac_rfl in Hitchhikers Guide to Lean](https://github.com/lean-forward/logical_verification_2024/blob/4e5e78a040dd34c98339f13db2b5357918dda32a/lean/LoVe/LoVe03_BackwardProofs_Demo.lean#L284C1-L289C12)
