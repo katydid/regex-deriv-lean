@@ -18,3 +18,13 @@ h : n ≤ m
 ```
 
 It eliminated the case where n ≤ m is false, since this caused a contradiction with `h`.
+
+In cases where this is not eliminated when case using `split_ifs` in the following way:
+
+```lean
+split_ifs
+case pos hc =>
+  sorry
+case neg hc =>
+  sorry
+```
