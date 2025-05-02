@@ -151,42 +151,6 @@ def SmartDesc.reader (d: SmartDesc): Bool :=
 def hash_with_sparams (name: String) (sparams: List SmartDesc): UInt64 :=
   hash_list (31 * 17 + hash_string name) (List.map SmartDesc.hash sparams)
 
-def SmartDesc.intro_func (name: String) (sparams: List SmartDesc): SmartDesc :=
-  let params := List.map (λ s => s.subtype.val) sparams
-  let hash := hash_with_sparams name sparams
-  let reader := List.any params Desc.reader
-  let desc := Desc.intro name params hash reader
-  by
-     refine ⟨ desc, IsSmart.isSmart name params hash reader ?_ ?_ ?_ ?_ ⟩
-     · rfl
-     · sorry -- TODO
-     · sorry -- TODO
-     · sorry -- TODO
-
-def SmartDesc.intro_var (name: String): SmartDesc :=
-  let params := []
-  let hash := hash_with_sparams name []
-  let reader := true
-  let desc := Desc.intro name params hash reader
-  by
-     refine ⟨ desc, IsSmart.isSmart name params hash reader ?_ ?_ ?_ ?_ ⟩
-     · rfl
-     · sorry -- TODO
-     · sorry -- TODO
-     · sorry -- TODO
-
-def SmartDesc.intro_const (name: String): SmartDesc :=
-  let params := []
-  let hash := hash_with_sparams name []
-  let reader := false
-  let desc := Desc.intro name params hash reader
-  by
-     refine ⟨ desc, IsSmart.isSmart name params hash reader ?_ ?_ ?_ ?_ ⟩
-     · rfl
-     · sorry -- TODO
-     · sorry -- TODO
-     · sorry -- TODO
-
 private def cmp' (x y: Desc): Ordering :=
   match x with
   | ⟨xname, xparams, xhash, _⟩ =>
@@ -223,13 +187,5 @@ def SmartDesc.compare := cmp
 
 instance : Ord SmartDesc where
   compare x y := x.compare y
-
-theorem cmp_symm : ∀ (x y : SmartDesc),
-  Ordering.swap (x.compare y) = y.compare x := by
-  -- TODO
-  sorry
-
-instance : Batteries.OrientedCmp SmartDesc.compare where
-  symm x y := cmp_symm x y
 
 end Desc
