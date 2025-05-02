@@ -9,8 +9,6 @@ import Katydid.Std.Ltac
 import Katydid.Std.Balistic
 import Katydid.Std.NonEmptyList
 
-import Katydid.Example.SimpLibrary
-
 import Katydid.Regex.Language
 import Katydid.Regex.SimpleRegex
 import Katydid.Regex.IndexedRegex
