@@ -62,25 +62,18 @@ def denote_onlyif {α: Type} (condition: Prop) [dcond: Decidable condition] (r: 
   unfold Language.onlyif
   unfold onlyif
   funext xs
-  have hc : (condition <-> True) \/ (condition <-> False) :=
-    Decidable.true_or_false condition
-  cases hc with
-  | inl ctrue =>
-    split_ifs
-    case pos hc' =>
-      rw [ctrue]
-      simp only [true_and]
-    case neg hc' =>
-      rw [ctrue] at hc'
-      contradiction
-  | inr cfalse =>
-    split_ifs
-    case neg hc' =>
-      rw [cfalse]
-      simp only [denote, Language.emptyset, false_and]
-    case pos hc' =>
-      rw [cfalse] at hc'
-      contradiction
+  split_ifs
+  case pos hc =>
+    simp only [eq_iff_iff, iff_and_self]
+    intro d
+    assumption
+  case neg hc =>
+    simp only [eq_iff_iff]
+    rw [denote]
+    rw [Language.emptyset]
+    simp only [false_iff, not_and]
+    intro hc'
+    contradiction
 
 theorem null_commutes {α: Type} (r: Regex α):
   ((null r) = true) = Language.null (denote r) := by
