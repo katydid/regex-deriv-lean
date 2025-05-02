@@ -44,7 +44,7 @@ import Myproject.Linter.DetectClassical
 import ...
 ```
 
-In your the folder `Myproject/Linter` you will need to create a file called `DetectClassical.lean`:
+In your folder `Myproject/Linter` you will need to create a file called `DetectClassical.lean`:
 
 ```lean
 -- Thank you to Damiano Testa
