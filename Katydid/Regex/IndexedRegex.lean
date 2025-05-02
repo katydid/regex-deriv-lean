@@ -32,16 +32,6 @@ def iso {P Q: Language.Lang α} (ifflang: Q = P) (r: @Regex α P): @Regex α Q :
   rw [ifflang]
   exact r
 
-def iso' {P Q: Language.Lang α} (ifflang: ∀ xs, P xs <-> Q xs): P = Q := by
-  funext xs
-  have ifflang_xs: P xs ↔ Q xs := ifflang xs
-  rw [ifflang_xs]
-
-def iso'' {P Q: Language.Lang α} (ifflang: ∀ {xs: List α}, P xs <-> Q xs) (r: @Regex α P): @Regex α Q := by
-  apply iso' at ifflang
-  rw [<- ifflang]
-  exact r
-
 def onlyif_true {cond: Prop} {l: List α -> Prop} (condIsTrue: cond):
   (fun xs => (cond ∧ l xs)) = l := by
   funext xs
@@ -81,13 +71,11 @@ def derive (r: Regex α l) (a: α): Regex α (Language.derive l a) :=
   | Regex.or x y =>
     iso Language.derive_or (Regex.or (derive x a) (derive y a))
   | Regex.concat x y =>
-    -- TODO
-    -- iso Language.derive_concat
-    --   (Regex.or
-    --     (onlyif (null x) (derive y a))
-    --     (Regex.concat (derive x a) y)
-    --   )
-    sorry
+    iso Language.derive_concat
+      (Regex.or
+        (Regex.concat (derive x a) y)
+        (onlyif (null x) (derive y a))
+      )
   | Regex.star x =>
     iso Language.derive_star (Regex.concat (derive x a) (Regex.star x))
 
