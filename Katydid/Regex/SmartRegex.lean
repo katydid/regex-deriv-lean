@@ -35,14 +35,10 @@ inductive Predicate (α: Type) where
     [ord: Ord α]
   : Predicate α
 
-def Predicate.desc {α: Type} (p: Predicate α): String :=
-  match p with
-  | Predicate.mk desc _ => desc
-
 def Predicate.compare (x: Predicate α) (y: Predicate α): Ordering :=
-  let xd: String := x.desc
-  let yd: String := y.desc
-  Ord.compare xd yd
+  match (x, y) with
+  | (Predicate.mk xdesc _, Predicate.mk ydesc _) =>
+    Ord.compare xdesc ydesc
 
 instance : Ord (Predicate α) where
   compare: Predicate α → Predicate α → Ordering := Predicate.compare
@@ -52,10 +48,6 @@ def Predicate.mkChar (c: Char): Predicate Char :=
 
 def Predicate.mkAny [o: Ord α]: Predicate α :=
   Predicate.mk "any" mkAnyPredFunc
-
-def Predicate.func (p: Predicate α): α -> Prop :=
-  match p with
-  | Predicate.mk _ func => func
 
 def evalPredicate (p: Predicate α) (a: α): Bool := by
   cases p with
