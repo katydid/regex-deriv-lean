@@ -32,7 +32,6 @@ def iso {P Q: Language.Lang α} (ifflang: Q = P) (r: @Regex α P): @Regex α Q :
   rw [ifflang]
   exact r
 
--- | scalar {s: Type u}: (Decidability.Dec s) -> Lang P -> Lang (Language.scalar s P)
 def onlyif {cond: Prop} (dcond: Decidable cond) (r: Regex α l): Regex α (Language.onlyif cond l) :=
   match dcond with
   | isTrue h =>
