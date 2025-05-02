@@ -57,20 +57,12 @@ def Predicate.func (p: Predicate α): α -> Prop :=
   match p with
   | Predicate.mk _ func => func
 
-def Predicate.decfunc (p: Predicate α): DecidablePred p.func := by
-  cases p with
-  | mk desc f =>
-    rename_i dec _
-    intro a
-    unfold DecidablePred at dec
-    unfold Predicate.func
-    simp only
-    apply dec
-
 def evalPredicate (p: Predicate α) (a: α): Bool := by
-  cases p.decfunc a with
-  | isFalse => exact Bool.false
-  | isTrue => exact Bool.true
+  cases p with
+  | @mk _ pred dpred _ =>
+    cases dpred a with
+    | isFalse => exact Bool.false
+    | isTrue => exact Bool.true
 
 inductive Regex (α: Type): Type where
   | emptyset : Regex α
@@ -167,7 +159,7 @@ def denote {α: Type} (r: Regex α): Language.Lang α :=
   match r with
   | Regex.emptyset => Language.emptyset
   | Regex.emptystr => Language.emptystr
-  | Regex.pred p => Language.pred p.func
+  | Regex.pred (@Predicate.mk _ _ func _ _) => Language.pred func
   | Regex.or x y => Language.or (denote x) (denote y)
   | Regex.concat x y => Language.concat (denote x) (denote y)
   | Regex.star x => Language.star (denote x)
@@ -335,7 +327,6 @@ theorem simp_pred_any_is_any:
   denote (Regex.pred (@Predicate.mkAny α o)) = Language.any := by
   unfold denote
   unfold Predicate.mkAny
-  unfold Predicate.func
   simp only
   unfold mkAnyPredFunc
   unfold Language.pred
@@ -490,7 +481,7 @@ def derive (r: Regex α) (a: α): Regex α :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
-  | Regex.pred p => onlyif' (p.decfunc a) Regex.emptystr
+  | Regex.pred (@Predicate.mk _ _ _ decfunc _) => onlyif' (decfunc a) Regex.emptystr
   | Regex.or x y =>
       SmartRegex.smartOr (derive x a) (derive y a)
   | Regex.concat x y =>
@@ -518,20 +509,22 @@ lemma derive_commutes_emptystr {x: α}:
 lemma derive_commutes_pred {p: Predicate α} {x: α}:
   denote (derive (Regex.pred p) x) = Language.derive (denote (Regex.pred p)) x := by
   funext xs
-  simp only [derive, Language.derive, Language.derives, denote, singleton_append, eq_iff_iff]
-  rw [onlyif', Language.pred]
-  split_ifs with h
-  · rw [denote]
-    simp only [Language.emptystr, cons.injEq]
-    apply Iff.intro
-    · intro hxs
-      use x
-    · intro ⟨w, hxs, hp⟩
-      exact hxs.right
-  · rw [denote]
-    simp only [Language.emptyset, cons.injEq, false_iff, not_exists, not_and, and_imp, forall_eq']
-    intro _ h'
-    contradiction
+  cases p with
+  | @mk _ pred decidablePred _ =>
+    simp only [derive, Language.derive, Language.derives, denote, singleton_append, eq_iff_iff]
+    rw [onlyif', Language.pred]
+    split_ifs with h
+    · rw [denote]
+      simp only [Language.emptystr, cons.injEq]
+      apply Iff.intro
+      · intro hxs
+        use x
+      · intro ⟨w, hxs, hp⟩
+        exact hxs.right
+    · rw [denote]
+      simp only [Language.emptyset, cons.injEq, false_iff, not_exists, not_and, and_imp, forall_eq']
+      intro _ h'
+      contradiction
 
 lemma derive_commutes_or {r1 r2: Regex α} {x: α}
   (ih1: denote (derive r1 x) = Language.derive (denote r1) x)
