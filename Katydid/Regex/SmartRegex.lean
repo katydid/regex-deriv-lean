@@ -46,12 +46,9 @@ instance : Ord (Predicate α) where
 def Predicate.mkChar (c: Char): Predicate Char :=
   Predicate.mk (String.mk [c]) (mkCharPredFunc c)
 
-def Predicate.mkAny [o: Ord α]: Predicate α :=
-  Predicate.mk "any" mkAnyPredFunc
-
 def evalPredicate (p: Predicate α) (a: α): Bool := by
   cases p with
-  | @mk _ pred dpred _ =>
+  | @mk _ _ dpred _ =>
     cases dpred a with
     | isFalse => exact Bool.false
     | isTrue => exact Bool.true
@@ -59,6 +56,7 @@ def evalPredicate (p: Predicate α) (a: α): Bool := by
 inductive Regex (α: Type): Type where
   | emptyset : Regex α
   | emptystr : Regex α
+  | any : Regex α -- We introduce any, so that we can apply smart constructor rules based on (star any)
   | pred : (p: Predicate α) → Regex α
   | or : Regex α → Regex α → Regex α
   | concat : Regex α → Regex α → Regex α
@@ -77,6 +75,16 @@ def Regex.compare (x y: Regex α): Ordering :=
     | Regex.emptyset =>
       Ordering.gt
     | Regex.emptystr =>
+      Ordering.eq
+    | _ =>
+      Ordering.lt
+  | Regex.any =>
+    match y with
+    | Regex.emptyset =>
+      Ordering.gt
+    | Regex.emptystr =>
+      Ordering.gt
+    | Regex.any =>
       Ordering.eq
     | _ =>
       Ordering.lt
@@ -151,6 +159,7 @@ def denote {α: Type} (r: Regex α): Language.Lang α :=
   match r with
   | Regex.emptyset => Language.emptyset
   | Regex.emptystr => Language.emptystr
+  | Regex.any => Language.any
   | Regex.pred (@Predicate.mk _ _ func _ _) => Language.pred func
   | Regex.or x y => Language.or (denote x) (denote y)
   | Regex.concat x y => Language.concat (denote x) (denote y)
@@ -160,6 +169,7 @@ def null (r: Regex α): Bool :=
   match r with
   | Regex.emptyset => false
   | Regex.emptystr => true
+  | Regex.any => false
   | Regex.pred _ => false
   | Regex.or x y => null x || null y
   | Regex.concat x y => null x && null y
@@ -179,6 +189,11 @@ theorem null_commutes {α: Type} (r: Regex α):
     rw [Language.null_emptystr]
     unfold null
     simp only
+  | any =>
+    unfold denote
+    rw [Language.null_any]
+    unfold null
+    simp only [Bool.false_eq_true]
   | pred p =>
     unfold denote
     rw [Language.null_pred]
@@ -226,6 +241,8 @@ theorem smartStar_is_star (x: Regex α):
     simp only [smartStar]
     simp only [denote]
     rw [Language.simp_star_emptystr_is_emptystr]
+  | any =>
+    simp only [smartStar]
   | pred p =>
     simp only [smartStar]
   | concat x1 x2 =>
@@ -266,6 +283,12 @@ theorem smartConcat_is_concat {α: Type} (x y: Regex α):
     unfold smartConcat
     simp only [denote]
     exact Language.simp_concat_emptystr_l_is_r (denote y)
+  | any =>
+    cases y <;> simp only [denote]
+    · case emptyset =>
+      apply Language.simp_concat_emptyset_r_is_emptyset
+    · case emptystr =>
+      apply Language.simp_concat_emptystr_r_is_l
   | pred p =>
     cases y <;> simp only [denote]
     · case emptyset =>
@@ -315,31 +338,19 @@ theorem orToList_is_orFromList (x: Regex α):
     rw [NonEmptyList.cons_head]
     congr
 
-theorem simp_pred_any_is_any:
-  denote (Regex.pred (@Predicate.mkAny α o)) = Language.any := by
+theorem simp_star_pred_any_is_universal {α: Type}:
+  denote (Regex.star (@Regex.any α)) = Language.universal := by
   unfold denote
-  unfold Predicate.mkAny
-  simp only
-  unfold mkAnyPredFunc
-  unfold Language.pred
-  unfold Language.any
-  funext xs
-  simp only [and_true]
-
-theorem simp_star_pred_any_is_universal [o: Ord α]:
-  denote (Regex.star (Regex.pred (@Predicate.mkAny α o))) = Language.universal := by
-  unfold denote
-  rw [simp_pred_any_is_any]
   exact Language.simp_star_any_is_universal
 
 theorem simp_or_universal_r_is_universal [Ord α] (x: Regex α):
-  denote (Regex.or x (Regex.star (Regex.pred Predicate.mkAny))) = Language.universal := by
+  denote (Regex.or x (Regex.star Regex.any)) = Language.universal := by
   nth_rewrite 1 [denote]
   rw [simp_star_pred_any_is_universal]
   rw [Language.simp_or_universal_r_is_universal]
 
 theorem simp_or_universal_l_is_universal [Ord α] (x: Regex α):
-  denote (Regex.or (Regex.star (Regex.pred Predicate.mkAny)) x) = Language.universal := by
+  denote (Regex.or (Regex.star Regex.any) x) = Language.universal := by
   nth_rewrite 1 [denote]
   rw [simp_star_pred_any_is_universal]
   rw [Language.simp_or_universal_l_is_universal]
@@ -355,11 +366,11 @@ theorem simp_or_universal_l_is_universal [Ord α] (x: Regex α):
 def smartOr (x y: Regex α): Regex α :=
   match x with
   | Regex.emptyset => y
-  | Regex.star (Regex.pred (Predicate.mk "any" _)) => x
+  | Regex.star Regex.any => x
   | _ =>
   match y with
   | Regex.emptyset => x
-  | Regex.star (Regex.pred (Predicate.mk "any" _)) => y
+  | Regex.star Regex.any => y
   | _ =>
     let xs := orToList x
     let ys := orToList y
@@ -378,10 +389,7 @@ private theorem smartOr_emptyset_l_is_r (x: Regex α):
 private theorem smartOr_emptyset_r_is_l':
   smartOr x Regex.emptyset = x := by
   simp only [smartOr]
-  split
-  · rfl
-  · rfl
-  · rfl
+  split <;> rfl
 
 private theorem smartOr_emptyset_r_is_l (x: Regex α):
   denote (Regex.or x Regex.emptyset) = denote (smartOr x Regex.emptyset) := by
@@ -394,9 +402,25 @@ private theorem smartOr_orFromList_mergeReps_orToList_is_or (x y: Regex α):
   denote (orFromList (NonEmptyList.mergeReps (orToList x) (orToList y))) = denote (Regex.or x y):= by
   induction x with
   | emptyset =>
-    simp [denote, orFromList, orToList, NonEmptyList.mergeReps]
-    sorry
+    simp only [orToList, orFromList]
+    cases y with
+    | emptyset =>
+      sorry
+    | emptystr =>
+      sorry
+    | any =>
+      sorry
+    | pred _ =>
+      sorry
+    | or x1 x2 =>
+      sorry
+    | concat x1 x2 =>
+      sorry
+    | star x1 =>
+      sorry
   | emptystr =>
+    sorry
+  | any =>
     sorry
   | pred _ =>
     sorry
@@ -407,72 +431,135 @@ private theorem smartOr_orFromList_mergeReps_orToList_is_or (x y: Regex α):
   | star x1 =>
     sorry
 
+lemma simp_or_x_star_any_is_star_any {x: Regex α}:
+  denote (Regex.or x (Regex.star Regex.any)) = denote (Regex.star Regex.any) := by
+  unfold denote
+  unfold denote
+  unfold denote
+  rw [Language.simp_star_any_is_universal]
+  rw [Language.simp_or_universal_r_is_universal]
+
+lemma simp_or_star_any_x_is_star_any {x: Regex α}:
+  denote (Regex.or (Regex.star Regex.any) x) = denote (Regex.star Regex.any) := by
+  unfold denote
+  unfold denote
+  unfold denote
+  rw [Language.simp_star_any_is_universal]
+  rw [Language.simp_or_universal_l_is_universal]
+
+lemma smartOr_emptystr_is_or (y: Regex α):
+  denote (Regex.or Regex.emptystr y) = denote (smartOr Regex.emptystr y) := by
+  cases y with
+  | emptyset =>
+    rw [smartOr_emptyset_r_is_l]
+  | star y1 =>
+    cases y1 with
+    | any =>
+      simp only [smartOr]
+      rw [simp_or_x_star_any_is_star_any]
+    | _ =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+  | _ =>
+    simp only [smartOr]
+    rw [smartOr_orFromList_mergeReps_orToList_is_or]
+
+lemma smartOr_any_is_or (y: Regex α):
+  denote (Regex.or Regex.any y) = denote (smartOr Regex.any y) := by
+  cases y with
+  | emptyset =>
+    rw [smartOr_emptyset_r_is_l]
+  | star y1 =>
+    cases y1 with
+    | any =>
+      simp only [smartOr]
+      rw [simp_or_x_star_any_is_star_any]
+    | _ =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+  | _ =>
+    simp only [smartOr]
+    rw [smartOr_orFromList_mergeReps_orToList_is_or]
+
+lemma smartOr_pred_is_or (p: Predicate α) (y: Regex α):
+  denote (Regex.or (Regex.pred p) y) = denote (smartOr (Regex.pred p) y) := by
+  cases y with
+  | emptyset =>
+    rw [smartOr_emptyset_r_is_l]
+  | star y1 =>
+    cases y1 with
+    | any =>
+      simp only [smartOr]
+      rw [simp_or_x_star_any_is_star_any]
+    | _ =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+  | _ =>
+    simp only [smartOr]
+    rw [smartOr_orFromList_mergeReps_orToList_is_or]
+
+lemma smartOr_star_is_or (x y: Regex α):
+  denote (Regex.or (Regex.star x) y) = denote (smartOr (Regex.star x) y) := by
+  cases x with
+  | any =>
+    simp only [smartOr]
+    rw [simp_or_star_any_x_is_star_any]
+  | _ =>
+    cases y with
+    | emptyset =>
+      rw [smartOr_emptyset_r_is_l]
+    | star y1 =>
+      cases y1 with
+      | any =>
+        simp only [smartOr]
+        rw [simp_or_x_star_any_is_star_any]
+      | _ =>
+        simp only [smartOr]
+        rw [smartOr_orFromList_mergeReps_orToList_is_or]
+    | _ =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+
+lemma smartOr_concat_is_or (x1 x2 y: Regex α):
+  denote (Regex.or (Regex.concat x1 x2) y) = denote (smartOr (Regex.concat x1 x2) y) := by
+  cases y with
+  | emptyset =>
+    rw [smartOr_emptyset_r_is_l]
+  | star y1 =>
+    cases y1 with
+    | any =>
+      simp only [smartOr]
+      rw [simp_or_x_star_any_is_star_any]
+    | _ =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+  | _ =>
+    simp only [smartOr]
+    rw [smartOr_orFromList_mergeReps_orToList_is_or]
+
 theorem smartOr_is_or (x y: Regex α):
   denote (Regex.or x y) = denote (smartOr x y) := by
   induction x with
   | emptyset =>
-    rw [smartOr_emptyset_l_is_r]
+    apply smartOr_emptyset_l_is_r
   | emptystr =>
-    cases y with
-    | emptyset =>
-      rw [smartOr_emptyset_r_is_l]
-    | emptystr =>
-      simp only [smartOr]
-      rw [smartOr_orFromList_mergeReps_orToList_is_or]
-    | pred _ =>
-      simp only [smartOr]
-      rw [smartOr_orFromList_mergeReps_orToList_is_or]
-    | or y1 y2 =>
-      simp only [smartOr]
-      rw [smartOr_orFromList_mergeReps_orToList_is_or]
-    | concat y1 y2 =>
-      simp only [smartOr]
-      rw [smartOr_orFromList_mergeReps_orToList_is_or]
-    | star y1 =>
-      cases y1 with
-      | emptyset =>
-        simp only [smartOr]
-        rw [smartOr_orFromList_mergeReps_orToList_is_or]
-      | emptystr =>
-        simp only [smartOr]
-        rw [smartOr_orFromList_mergeReps_orToList_is_or]
-      | pred p1 =>
-        simp only [smartOr]
-        split
-        · case _ _ h =>
-          contradiction
-        · case _ _ h _ _ h' =>
-          simp at h'
-          rw [h']
-          unfold denote
-          sorry
-        · case _ _ h _ =>
-          sorry
-      | or y11 y12 =>
-        simp only [smartOr]
-        rw [smartOr_orFromList_mergeReps_orToList_is_or]
-      | concat y11 y12 =>
-        simp only [smartOr]
-        rw [smartOr_orFromList_mergeReps_orToList_is_or]
-      | star y11 =>
-        simp only [smartOr]
-        rw [smartOr_orFromList_mergeReps_orToList_is_or]
+    apply smartOr_emptystr_is_or
+  | any =>
+    apply smartOr_any_is_or
   | pred p =>
-    cases p
-    case mk pred dpred desc func =>
-    simp only [smartOr]
-    sorry
-  | or x1 x2 =>
+    apply smartOr_pred_is_or
+  | or x1 x2 ih1 ih2 =>
     sorry
   | concat x1 x2 =>
-    sorry
+    apply smartOr_concat_is_or
   | star x1 =>
-    sorry
+    apply smartOr_star_is_or
 
 def derive (r: Regex α) (a: α): Regex α :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
+  | Regex.any => Regex.emptystr
   | Regex.pred (@Predicate.mk _ _ _ decfunc _) => onlyif' (decfunc a) Regex.emptystr
   | Regex.or x y =>
       SmartRegex.smartOr (derive x a) (derive y a)
@@ -497,6 +584,15 @@ lemma derive_commutes_emptystr {x: α}:
     singleton_append,
     reduceCtorEq,
   ]
+
+lemma derive_commutes_any {x: α}:
+  denote (derive Regex.any x) = Language.derive (denote Regex.any) x := by
+  funext xs
+  unfold derive
+  unfold denote
+  unfold Language.any
+  simp only [Language.emptystr, Language.derive, Language.derives, singleton_append, cons.injEq,
+    exists_and_right, exists_eq', true_and]
 
 lemma derive_commutes_pred {p: Predicate α} {x: α}:
   denote (derive (Regex.pred p) x) = Language.derive (denote (Regex.pred p)) x := by
@@ -602,6 +698,8 @@ theorem derive_commutes {α: Type} (r: Regex α) (x: α):
     exact derive_commutes_emptyset
   | emptystr =>
     exact derive_commutes_emptystr
+  | any =>
+    exact derive_commutes_any
   | pred p =>
     exact derive_commutes_pred
   | or r1 r2 ih1 ih2 =>

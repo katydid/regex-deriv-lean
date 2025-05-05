@@ -163,6 +163,18 @@ theorem null_emptystr {α: Type}:
   @null α emptystr = True := by
   rw [null_iff_emptystr]
 
+theorem null_iff_any {α: Type}:
+  @null α any <-> False :=
+  Iff.intro nofun nofun
+
+theorem not_null_if_any {α: Type}:
+  @null α any -> False :=
+  nofun
+
+theorem null_any {α: Type}:
+  @null α any = False := by
+  rw [null_iff_any]
+
 theorem null_iff_char {α: Type} {c: α}:
   null (char c) <-> False :=
   Iff.intro nofun nofun
