@@ -36,6 +36,7 @@ instance [Ord α]: LE (List α) where
   le xs ys := (Lists.compare xs ys).isLE
 
 def Lists.merge [Ord α] (xs: List α) (ys: List α): List α :=
+  -- List.merge is replaced at compile time with an optimized version
   List.merge xs ys (fun x y => (Ord.compare x y).isLE)
 
 def Lists.eraseReps [BEq α] (xs: List α): List α :=
@@ -45,7 +46,7 @@ def Lists.eraseReps [BEq α] (xs: List α): List α :=
   | (x1::x2::xs) =>
     if x1 == x2
     then Lists.eraseReps (x2::xs)
-    else x1 :: List.eraseReps (x2::xs)
+    else x1 :: Lists.eraseReps (x2::xs)
 
 def Lists.mergeReps [BEq α] [Ord α] (xs: List α) (ys: List α): List α :=
   Lists.eraseReps (Lists.merge xs ys)

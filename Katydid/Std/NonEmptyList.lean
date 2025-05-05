@@ -25,17 +25,21 @@ theorem cons_head {x: α} {xs: NonEmptyList α}:
   (NonEmptyList.cons x xs).head = x := by
   rw [NonEmptyList.cons]
 
-def toList (xs: NonEmptyList α): List α :=
+def toList (xs: NonEmptyList α): ∃ xs': List α, xs'.length > 0 :=
   match xs with
   | NonEmptyList.mk head tail =>
-    head :: tail
+    Exists.intro (head :: tail) (by
+      rw [List.length_cons]
+      omega
+    )
 
 instance [Ord α] : LE (NonEmptyList α) where
-  le (x: NonEmptyList α) (y: NonEmptyList α) :=
-    LE.le x.toList y.toList
-
-def merge' [Ord α] (xs: NonEmptyList α) (ys: NonEmptyList α): List α :=
-  List.merge (xs.toList) (ys.toList) (fun x y => (Ord.compare x y).isLE)
+  le (xs: NonEmptyList α) (ys: NonEmptyList α) :=
+    match xs with
+    | NonEmptyList.mk xhead xtail =>
+      match ys with
+      | NonEmptyList.mk yhead ytail =>
+        LE.le (xhead :: xtail) (yhead :: ytail)
 
 def merge [Ord α] (xs: NonEmptyList α) (ys: NonEmptyList α): NonEmptyList α :=
   match xs with
@@ -43,12 +47,10 @@ def merge [Ord α] (xs: NonEmptyList α) (ys: NonEmptyList α): NonEmptyList α 
   match ys with
   | NonEmptyList.mk y1 ys1 =>
   match Ord.compare x1 y1 with
-  | Ordering.eq =>
-    NonEmptyList.mk x1 (Lists.merge xs1 ys1)
-  | Ordering.lt =>
-    NonEmptyList.mk x1 (Lists.merge xs1 (y1::ys1))
   | Ordering.gt =>
     NonEmptyList.mk y1 (Lists.merge (x1::xs1) ys1)
+  | _ => -- less than or equal
+    NonEmptyList.mk x1 (Lists.merge xs1 (y1::ys1))
 
 def eraseReps' [BEq α] (x: α) (xs: List α): List α :=
   match xs with
