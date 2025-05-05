@@ -32,7 +32,6 @@ inductive Predicate (α: Type) where
     (desc: String)
     (func: α -> Prop)
     [decidablePred: DecidablePred func]
-    [ord: Ord α]
   : Predicate α
 
 def Predicate.compare (x: Predicate α) (y: Predicate α): Ordering :=
@@ -43,12 +42,22 @@ def Predicate.compare (x: Predicate α) (y: Predicate α): Ordering :=
 instance : Ord (Predicate α) where
   compare: Predicate α → Predicate α → Ordering := Predicate.compare
 
+instance : LE (Predicate α) where
+  le x y := (Ord.compare x y).isLE
+
+instance : BEq (Predicate α) where
+  beq x y := Ord.compare x y == Ordering.eq
+
+instance : LawfulBEq (Predicate α) where
+  eq_of_beq {x y} h := by sorry
+  rfl {x} := by sorry
+
 def Predicate.mkChar (c: Char): Predicate Char :=
   Predicate.mk (String.mk [c]) (mkCharPredFunc c)
 
 def evalPredicate (p: Predicate α) (a: α): Bool := by
   cases p with
-  | @mk _ _ dpred _ =>
+  | @mk _ _ dpred =>
     cases dpred a with
     | isFalse => exact Bool.false
     | isTrue => exact Bool.true
@@ -146,6 +155,32 @@ instance : LE (Regex α) where
 instance : BEq (Regex α) where
   beq x y := Ord.compare x y == Ordering.eq
 
+-- `LawfulBEq α` is a typeclass which asserts that the `BEq α` implementation
+-- (which supplies the `a == b` notation) coincides with logical equality `a = b`.
+instance : LawfulBEq (Regex α) where
+  -- {a b : α} → a == b → a = b
+  eq_of_beq {x y} h := by
+    induction x <;> induction y <;> (try (first | rfl | contradiction))
+    case pred =>
+      sorry
+    case concat =>
+      sorry
+    case or =>
+      sorry
+    case star =>
+      sorry
+  -- {a : α} → a == a
+  rfl {x} := by
+    induction x <;> try rfl
+    case pred =>
+      sorry
+    case concat =>
+      sorry
+    case or =>
+      sorry
+    case star =>
+      sorry
+
 def Regex.le (x y: Regex α): Bool :=
   x <= y
 
@@ -160,7 +195,7 @@ def denote {α: Type} (r: Regex α): Language.Lang α :=
   | Regex.emptyset => Language.emptyset
   | Regex.emptystr => Language.emptystr
   | Regex.any => Language.any
-  | Regex.pred (@Predicate.mk _ _ func _ _) => Language.pred func
+  | Regex.pred (@Predicate.mk _ _ func _) => Language.pred func
   | Regex.or x y => Language.or (denote x) (denote y)
   | Regex.concat x y => Language.concat (denote x) (denote y)
   | Regex.star x => Language.star (denote x)
@@ -314,26 +349,64 @@ theorem smartConcat_is_concat {α: Type} (x y: Regex α):
     · case emptystr =>
       apply Language.simp_concat_emptystr_r_is_l
 
-def orToList (x: Regex α): NonEmptyList (Regex α) :=
+def orToList (x: Regex α): List (Regex α) :=
   match x with
   | Regex.or x1 x2 =>
     -- smartOr guarantees that left hand side will not be an Regex.or so a recursive call is only required on the right hand side.
-    NonEmptyList.cons x1 (orToList x2)
+    x1 :: (orToList x2)
   | _ =>
-    NonEmptyList.mk x []
+    [x]
 
-private def orFromList' (x1: Regex α) (xs: List (Regex α)): Regex α :=
+def orFromList (xs: List (Regex α)): Regex α :=
   match xs with
-  | [] => x1
-  | (x2::xs') => Regex.or x1 (orFromList' x2 xs')
-
-def orFromList (xs: NonEmptyList (Regex α)): Regex α :=
-  match xs with
-  | NonEmptyList.mk x1 xs' => orFromList' x1 xs'
+  | [] => Regex.emptyset
+  | [x1] => x1
+  | (x1::xs') => Regex.or x1 (orFromList xs')
 
 theorem orToList_is_orFromList (x: Regex α):
   orFromList (orToList x) = x := by
-  induction x <;> (try simp only [orToList, orFromList, orFromList'])
+  induction x with
+  | emptyset =>
+    simp only [orToList, orFromList]
+  | emptystr =>
+    simp only [orToList, orFromList]
+  | any =>
+    simp only [orToList, orFromList]
+  | pred _ =>
+    simp only [orToList, orFromList]
+  | or x1 x2 ih1 ih2 =>
+    simp only [orToList, orFromList]
+    cases x2 with
+    | or x21 x22 =>
+      simp only [orToList, orFromList]
+      congr
+    | _ =>
+      simp only [orToList, orFromList]
+  | concat x1 x2 =>
+    simp only [orToList, orFromList]
+  | star x1 =>
+    simp only [orToList, orFromList]
+
+def orToNonEmptyList (x: Regex α): NonEmptyList (Regex α) :=
+  match x with
+  | Regex.or x1 x2 =>
+    -- smartOr guarantees that left hand side will not be an Regex.or so a recursive call is only required on the right hand side.
+    NonEmptyList.cons x1 (orToNonEmptyList x2)
+  | _ =>
+    NonEmptyList.mk x []
+
+private def orFromNonEmptyList' (x1: Regex α) (xs: List (Regex α)): Regex α :=
+  match xs with
+  | [] => x1
+  | (x2::xs') => Regex.or x1 (orFromNonEmptyList' x2 xs')
+
+def orFromNonEmptyList (xs: NonEmptyList (Regex α)): Regex α :=
+  match xs with
+  | NonEmptyList.mk x1 xs' => orFromNonEmptyList' x1 xs'
+
+theorem orToNonEmptyList_is_orFromNonEmptyList (x: Regex α):
+  orFromNonEmptyList (orToNonEmptyList x) = x := by
+  induction x <;> (try simp only [orToNonEmptyList, orFromNonEmptyList, orFromNonEmptyList'])
   · case or x1 x2 ih1 ih2 =>
     rw [NonEmptyList.cons_head]
     congr
@@ -357,12 +430,12 @@ theorem simp_or_universal_l_is_universal [Ord α] (x: Regex α):
 
 -- 1. If x or y is emptyset then return the other (Language.simp_or_emptyset_r_is_l and Language.simp_or_emptyset_l_is_r)
 -- 2. If x or y is star (any) then return star (any) (Language.simp_or_universal_r_is_universal and Language.simp_or_universal_l_is_universal)
--- 3. Get the lists of ors using orToList (Language.simp_or_assoc)
+-- 3. Get the lists of ors using orToNonEmptyList (Language.simp_or_assoc)
 -- 4. Merge sort the sorrted lists (Language.simp_or_comm and Language.simp_or_assoc)
 -- 5. Remove duplicates from the list (or create a set) (Language.simp_or_idemp)
 -- 6. If at any following step the set is size one, simply return
 -- TODO: 7. If any of the set is nullable, remove emptystr from the set (Language.simp_or_emptystr_null_r_is_r and Language.simp_or_null_l_emptystr_is_l)
--- 8. Reconstruct Regex.or from the list using orFromList (Language.simp_or_assoc)
+-- 8. Reconstruct Regex.or from the list using orFromNonEmptyList (Language.simp_or_assoc)
 def smartOr (x y: Regex α): Regex α :=
   match x with
   | Regex.emptyset => y
@@ -376,7 +449,7 @@ def smartOr (x y: Regex α): Regex α :=
     let ys := orToList y
     -- It is implied that xs is sorted, given it was created using smartOr.
     -- Merge the sorted lists and remove duplicates, resulting in a sorted list of unique items.
-    let ors := NonEmptyList.mergeReps xs ys
+    let ors := Lists.mergeReps xs ys
     orFromList ors
 
 private lemma smartOr_emptyset_l_is_r (x: Regex α):
@@ -398,38 +471,72 @@ private lemma smartOr_emptyset_r_is_l (x: Regex α):
   rw [Language.simp_or_emptyset_r_is_l]
   rw [smartOr_emptyset_r_is_l']
 
+private lemma smartOr_orFromList_mergeReps_orToList_is_or'_nil:
+  denote ((orFromList []).or (orFromList ys)) = denote (orFromList ys) := by
+  nth_rewrite 1 [orFromList]
+  nth_rewrite 1 [denote]
+  nth_rewrite 1 [denote]
+  rw [Language.simp_or_emptyset_l_is_r]
+
+private lemma lemmasmartOr_orFromList_mergeReps_orToList_is_or'_idemp (x: Regex α) (xs: List (Regex α)):
+  denote (orFromList (x :: xs)) = Language.or (denote x) (denote (orFromList xs)) := by
+  sorry
+
+private lemma h'' (x1 x2: Regex α):
+  (x1 == x2) = true -> (x1 = x2) := by
+  intro h
+  sorry
+
+private lemma smartOr_orFromList_mergeReps_orToList_is_or'_idemp_eraseReps (xs: List (Regex α)):
+  denote (orFromList (Lists.eraseReps xs)) = denote (orFromList xs) := by
+  induction xs with
+  | nil =>
+    unfold Lists.eraseReps
+    rfl
+  | cons x1 xs1 ih =>
+    unfold Lists.eraseReps
+    cases xs1 with
+    | nil =>
+      simp only
+    | cons x2 xs2 =>
+      simp only
+      split_ifs
+      case neg h =>
+        rw [lemmasmartOr_orFromList_mergeReps_orToList_is_or'_idemp]
+        rw [lemmasmartOr_orFromList_mergeReps_orToList_is_or'_idemp]
+        rw [ih]
+      case pos h =>
+          rw [ih]
+          rw [lemmasmartOr_orFromList_mergeReps_orToList_is_or'_idemp]
+          rw [lemmasmartOr_orFromList_mergeReps_orToList_is_or'_idemp]
+          rw [lemmasmartOr_orFromList_mergeReps_orToList_is_or'_idemp]
+          sorry
+
+private lemma smartOr_orFromList_mergeReps_orToList_is_or' (xs ys: List (Regex α)):
+  denote (orFromList (Lists.mergeReps xs ys)) = denote (Regex.or (orFromList xs) (orFromList ys)):= by
+  induction xs with
+  | nil =>
+    rw [smartOr_orFromList_mergeReps_orToList_is_or'_nil]
+    rw [list_mergeReps_nil]
+    rw [smartOr_orFromList_mergeReps_orToList_is_or'_idemp_eraseReps]
+  | cons x xs' ih =>
+    sorry
+
 private lemma smartOr_orFromList_mergeReps_orToList_is_or (x y: Regex α):
-  denote (orFromList (NonEmptyList.mergeReps (orToList x) (orToList y))) = denote (Regex.or x y):= by
-  induction x with
-  | emptyset =>
-    simp only [orToList, orFromList]
-    cases y with
-    | emptyset =>
-      sorry
-    | emptystr =>
-      sorry
-    | any =>
-      sorry
-    | pred _ =>
-      sorry
-    | or x1 x2 =>
-      sorry
-    | concat x1 x2 =>
-      sorry
-    | star x1 =>
-      sorry
-  | emptystr =>
-    sorry
-  | any =>
-    sorry
-  | pred _ =>
-    sorry
-  | or x1 x2 =>
-    sorry
-  | concat x1 x2 =>
-    sorry
-  | star x1 =>
-    sorry
+  denote (orFromList (Lists.mergeReps (orToList x) (orToList y))) = denote (Regex.or x y):= by
+  rw [smartOr_orFromList_mergeReps_orToList_is_or']
+  rw [orToList_is_orFromList]
+  rw [orToList_is_orFromList]
+
+private lemma smartOr_orFromNonEmptyList_mergeReps_orToNonEmptyList_is_or' (xs ys: NonEmptyList (Regex α)):
+  denote (orFromNonEmptyList (NonEmptyList.mergeReps xs ys)) = denote (Regex.or (orFromNonEmptyList xs) (orFromNonEmptyList ys)) := by
+  sorry
+
+private lemma smartOr_orFromNonEmptyList_mergeReps_orToNonEmptyList_is_or (x y: Regex α):
+  denote (orFromNonEmptyList (NonEmptyList.mergeReps (orToNonEmptyList x) (orToNonEmptyList y))) = denote (Regex.or x y):= by
+  rw [smartOr_orFromNonEmptyList_mergeReps_orToNonEmptyList_is_or']
+  rw [orToNonEmptyList_is_orFromNonEmptyList]
+  rw [orToNonEmptyList_is_orFromNonEmptyList]
 
 lemma simp_or_x_star_any_is_star_any {x: Regex α}:
   denote (Regex.or x (Regex.star Regex.any)) = denote (Regex.star Regex.any) := by
@@ -577,7 +684,7 @@ def derive (r: Regex α) (a: α): Regex α :=
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
   | Regex.any => Regex.emptystr
-  | Regex.pred (@Predicate.mk _ _ _ decfunc _) => onlyif' (decfunc a) Regex.emptystr
+  | Regex.pred (@Predicate.mk _ _ _ decfunc) => onlyif' (decfunc a) Regex.emptystr
   | Regex.or x y =>
       SmartRegex.smartOr (derive x a) (derive y a)
   | Regex.concat x y =>
@@ -615,7 +722,7 @@ lemma derive_commutes_pred {p: Predicate α} {x: α}:
   denote (derive (Regex.pred p) x) = Language.derive (denote (Regex.pred p)) x := by
   funext xs
   cases p with
-  | @mk _ pred decidablePred _ =>
+  | @mk _ pred decidablePred =>
     simp only [derive, Language.derive, Language.derives, denote, singleton_append, eq_iff_iff]
     rw [onlyif', Language.pred]
     split_ifs with h
