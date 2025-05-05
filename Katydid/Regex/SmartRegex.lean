@@ -537,6 +537,23 @@ lemma smartOr_concat_is_or (x1 x2 y: Regex α):
     simp only [smartOr]
     rw [smartOr_orFromList_mergeReps_orToList_is_or]
 
+lemma smartOr_or_is_or (x1 x2 y: Regex α):
+  denote (Regex.or (Regex.or x1 x2) y) = denote (smartOr (Regex.or x1 x2) y) := by
+  cases y with
+  | emptyset =>
+    rw [smartOr_emptyset_r_is_l]
+  | star y1 =>
+    cases y1 with
+    | any =>
+      simp only [smartOr]
+      rw [simp_or_x_star_any_is_star_any]
+    | _ =>
+      simp only [smartOr]
+      rw [smartOr_orFromList_mergeReps_orToList_is_or]
+  | _ =>
+    simp only [smartOr]
+    rw [smartOr_orFromList_mergeReps_orToList_is_or]
+
 theorem smartOr_is_or (x y: Regex α):
   denote (Regex.or x y) = denote (smartOr x y) := by
   induction x with
@@ -549,7 +566,7 @@ theorem smartOr_is_or (x y: Regex α):
   | pred p =>
     apply smartOr_pred_is_or
   | or x1 x2 ih1 ih2 =>
-    sorry
+    apply smartOr_or_is_or
   | concat x1 x2 =>
     apply smartOr_concat_is_or
   | star x1 =>
