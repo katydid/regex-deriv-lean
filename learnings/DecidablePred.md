@@ -58,7 +58,18 @@ def decidable (r: Regex α): DecidablePred (denote r) :=
 ```
 
 Decidability of the Regex is now proven.
-If you used the Law of Exclusive Middle, then the proof is not constructive, but that is fine.
+If you used the Law of Exclusive Middle, then the proof is not constructive, but that is fine apparently.
+
+## Doubt the use of Law of Exclusive Middle
+
+We doubt that it is really fine to use the Law of Exclusive Middle (Classical.choice) to prove decidability,
+since the use Classical.choice implies that Props are decidable.
+
+For example, if we use the the simplification rule that `(not (not r)) = r` (which requires Classical.choice)
+in our proof of decidability, then would our proof really be correct?
+
+For this reason we error on the side of caution and [detect the use of Classical.choice](./DetectingClassical.md) and make sure to avoid it.
+This is why we prefer our proof of decidability to be constructive. 
 
 ## References
 

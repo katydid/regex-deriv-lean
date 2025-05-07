@@ -1,4 +1,4 @@
-# Detecting the use of Classical.Choice
+# Detecting the use of Classical.choice
 
 If you do not want to use the Law of Excluded Middle in the proofs of your theorems, you need to make sure that you do not use the axiom `Classical.Choice`.
 
@@ -12,6 +12,71 @@ noncomputable def choice (α : Type _) : Option α :=
 
 Theorems are more lax and do not distinguish between theorems that use the Law of Exluded Middle and those that do not.
 If we want to enforce this, we need to build our own detector.
+
+## Avoid Classical with Decidable
+
+In the following proof our detector will detect the use Classical.choice:
+
+```lean
+theorem simp_not_not_is_double_negation
+  (r: Lang α):
+  not (not r) = r := by
+  unfold not
+  simp
+```
+
+If we ask `simp` what theorems it used via `simp?`, we get:
+
+```lean
+theorem simp_not_not_is_double_negation
+  (r: Lang α):
+  not (not r) = r := by
+  unfold not
+  simp only [not_not]
+```
+
+The `simp` tactic used the `not_not` theorem:
+
+```lean
+@[simp] theorem not_not : ¬¬a ↔ a := Decidable.not_not
+```
+
+The `not_not` theorem is found in `Init/Classical` and uses `Decidable` without requiring an instance of it.
+It can do this, since with `Classical.choice` all Props are decidable.
+
+We can remove the assumption and simply make it a requirement for the theorem, by adding an instance of `[Decidable (r xs)]`:
+
+```lean
+theorem simp_not_not_is_double_negation
+  (r: Lang α) (xs: List α) [Decidable (r xs)]:
+  not (not r) xs = r xs := by
+  unfold not
+  simp only [eq_iff_iff]
+  exact Decidable.not_not
+```
+
+Now our proof no longer requires `Classical.choice` and the dependency on `Decidable` has been made explicit.
+
+Notice how we need to add the `xs` parameter, since `Decidable` requires a `Prop` as a parameter, instead of a predicate.
+
+We can fix this by using `DecidablePred`:
+
+```lean
+theorem simp_not_not_is_double_negation
+  (r: Lang α) [DecidablePred r]:
+  not (not r) = r := by
+  unfold not
+  funext xs
+  simp only [eq_iff_iff]
+  exact Decidable.not_not
+```
+
+## Why avoid Classical.choice
+
+In the proof above we can see that we can apply the simplification rule `(not (not r)) = r` to our language only if our language is decidable.
+This means we first have to prove our language is decidable before we can use this theorem.
+If we prove decidability using this simplification rule, then that would not be a correct proof of decidability.
+This means that to be safe, we want to make sure that our proof of decidability does not use any theorems that rely on `Classical.choice`.
 
 ## Building a Detector
 
