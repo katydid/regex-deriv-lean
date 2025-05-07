@@ -960,3 +960,15 @@ theorem list_notin_cons (y: α) (x: α) (xs: List α):
     apply h
     apply Mem.tail
     exact yinxs
+
+theorem list_mergeReps_nil_l [BEq α] [Ord α] (ys: List α):
+  Lists.mergeReps [] ys = Lists.eraseReps ys := by
+  unfold Lists.mergeReps
+  unfold Lists.merge
+  rw [List.nil_merge]
+
+theorem list_mergeReps_nil_r [BEq α] [Ord α] (xs: List α):
+  Lists.mergeReps xs [] = Lists.eraseReps xs := by
+  unfold Lists.mergeReps
+  unfold Lists.merge
+  rw [List.merge_right]
