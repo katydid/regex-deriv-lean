@@ -24,6 +24,9 @@ def char {α: Type} (x : α): Lang α :=
 def pred {α: Type} (p : α -> Prop): Lang α :=
   fun xs => ∃ x, xs = [x] /\ p x
 
+def predicate {α: Type} (p : α -> Bool): Lang α :=
+  fun xs => ∃ x, xs = [x] /\ p x
+
 def any {α: Type}: Lang α :=
   fun xs => ∃ x, xs = [x]
 
@@ -191,6 +194,10 @@ theorem null_iff_pred {α: Type} {p: α -> Prop}:
   null (pred p) <-> False :=
   Iff.intro nofun nofun
 
+theorem null_iff_predicate {α: Type} {p: α -> Bool}:
+  null (predicate p) <-> False :=
+  Iff.intro nofun nofun
+
 theorem not_null_if_pred {α: Type} {p: α -> Prop}:
   null (pred p) -> False :=
   nofun
@@ -198,6 +205,10 @@ theorem not_null_if_pred {α: Type} {p: α -> Prop}:
 theorem null_pred {α: Type} {p: α -> Prop}:
   null (pred p) = False := by
   rw [null_iff_pred]
+
+theorem null_predicate {α: Type} {p: α -> Bool}:
+  null (predicate p) = False := by
+  rw [null_iff_predicate]
 
 theorem null_or {α: Type} {P Q: Lang α}:
   null (or P Q) = ((null P) \/ (null Q)) :=

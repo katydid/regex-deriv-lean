@@ -11,6 +11,7 @@ import Katydid.Std.NonEmptyList
 import Katydid.Regex.Language
 import Katydid.Regex.SimpleRegex
 import Katydid.Regex.IndexedRegex
+import Katydid.Regex.Predicate
 import Katydid.Regex.SmartRegex
 
 import Katydid.Expr.Desc
