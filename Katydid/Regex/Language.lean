@@ -529,11 +529,14 @@ example (r s t: Lang α):
   concat (concat r s) t = concat r (concat s t) := by
   ac_rfl
 
-instance IsLawfulLeftIdentity_concat {α: Type}: Std.LawfulLeftIdentity (@concat α) (@emptystr α) where
+instance IsLawfulIdentity_concat {α: Type} : Std.LawfulIdentity (@concat α) (@emptystr α) where
   left_id := simp_concat_emptystr_l_is_r
-
-instance IsLawfulRightIdentity_concat {α: Type}: Std.LawfulRightIdentity (@concat α) (@emptystr α) where
   right_id := simp_concat_emptystr_r_is_l
+
+-- Test ac_rfl uses the instance of LawfulIdentity
+example (r: Lang α):
+  concat emptystr r = r := by
+  ac_rfl
 
 theorem simp_or_emptyset_l_is_r (r: Lang α):
   or emptyset r = r := by
@@ -666,6 +669,11 @@ instance IsIdempotentOp_or {α: Type}: Std.IdempotentOp (@or α) :=
 
 instance IsLawfulCommIdentity_or {α: Type} : Std.LawfulCommIdentity (@or α) (@emptyset α) where
   right_id r := simp_or_emptyset_r_is_l r
+
+-- Test that ac_rfl uses the instance of Std.LawfulCommIdentity
+example (r: Lang α):
+  or r emptyset = r := by
+  ac_rfl
 
 -- Test that ac_rfl uses the instance of Std.Commutative
 example (r s: Lang α):
@@ -818,6 +826,11 @@ instance IsIdempotentOp_and {α: Type}: Std.IdempotentOp (@and α) :=
 
 instance IsLawfulCommIdentity_and {α: Type} : Std.LawfulCommIdentity (@and α) (@universal α) where
   right_id r := simp_and_universal_r_is_l r
+
+-- Test that ac_rfl uses the instance of Std.LawfulCommIdentity
+example (r: Lang α):
+  and r universal = r := by
+  ac_rfl
 
 -- Test that ac_rfl uses the instance of Std.Commutative
 example (r s: Lang α):

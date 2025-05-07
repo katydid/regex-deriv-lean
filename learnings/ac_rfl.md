@@ -16,6 +16,13 @@ We can do this since appending lists have already been proven to be associative.
 
 Appending lists have already been proven to be associative, but we can also do this for our own type.
 
+The `ac_rfl` tactic uses instances of the following classes to complete the proof:
+
+* Associative
+* Commutative
+* IdempotentOp
+* LawfulIdentity
+
 ### Associative
 
 We know that the `concat` operator in a regular expression is associative.
@@ -131,6 +138,38 @@ example (r: Lang α):
 -- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative and Std.IdempotentOp
 example (a b c d : Lang α):
   (or a (or b (or c d))) = (or a (or d (or (or b c) a))) := by ac_rfl
+```
+
+## LawfulIdentity
+
+Creating an instance of `LawfulIdentity` can be done in two ways:
+
+1. Creating an instance of `LawfulIdentity` or
+2. Creating an instance of `LawfulCommIdentity`, if the operator is an instance of `Commutative`.
+
+The `concat` operator is not commutative, so we have to create an instance of `LawfulIdentity`:
+
+```lean
+instance IsLawfulIdentity_concat {α: Type} : Std.LawfulIdentity (@concat α) (@emptystr α) where
+  left_id := simp_concat_emptystr_l_is_r
+  right_id := simp_concat_emptystr_r_is_l
+
+-- Test ac_rfl uses the instance of LawfulIdentity
+example (r: Lang α):
+  concat emptystr r = r := by
+  ac_rfl
+```
+
+The `or` operator is commutative, so we can create an instance of `LawfulCommIdentity`, which only requires one of `left_id` or `right_id`:
+
+```lean
+instance IsLawfulCommIdentity_or {α: Type} : Std.LawfulCommIdentity (@or α) (@emptyset α) where
+  right_id r := simp_or_emptyset_r_is_l r
+
+-- Test that ac_rfl uses the instance of Std.LawfulCommIdentity
+example (r: Lang α):
+  or r emptyset = r := by
+  ac_rfl
 ```
 
 ## References
