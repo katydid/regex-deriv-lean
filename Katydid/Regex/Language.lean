@@ -834,9 +834,10 @@ theorem not_not_intro' {p : Prop} (h : p) : ¬ ¬ p :=
   fun hn : (p -> False) => hn h
 
 theorem simp_not_not_is_double_negation
-  (r: Lang α) (xs: List α) [Decidable (r xs)]:
-  not (not r) xs = r xs := by
+  (r: Lang α) [DecidablePred r]:
+  not (not r) = r := by
   unfold not
+  funext xs
   simp only [eq_iff_iff]
   exact Decidable.not_not
 
