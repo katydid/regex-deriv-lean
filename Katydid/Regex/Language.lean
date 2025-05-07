@@ -529,6 +529,12 @@ example (r s t: Lang α):
   concat (concat r s) t = concat r (concat s t) := by
   ac_rfl
 
+instance IsLawfulLeftIdentity_concat {α: Type}: Std.LawfulLeftIdentity (@concat α) (@emptystr α) where
+  left_id := simp_concat_emptystr_l_is_r
+
+instance IsLawfulRightIdentity_concat {α: Type}: Std.LawfulRightIdentity (@concat α) (@emptystr α) where
+  right_id := simp_concat_emptystr_r_is_l
+
 theorem simp_or_emptyset_l_is_r (r: Lang α):
   or emptyset r = r := by
   unfold or
@@ -657,6 +663,9 @@ instance IsCommutative_or {α: Type}: Std.Commutative (@or α) :=
 -- It is used by the ac_rfl tactic.
 instance IsIdempotentOp_or {α: Type}: Std.IdempotentOp (@or α) :=
   { idempotent := simp_or_idemp }
+
+instance IsLawfulCommIdentity_or {α: Type} : Std.LawfulCommIdentity (@or α) (@emptyset α) where
+  right_id r := simp_or_emptyset_r_is_l r
 
 -- Test that ac_rfl uses the instance of Std.Commutative
 example (r s: Lang α):
@@ -806,6 +815,9 @@ instance IsCommutative_and {α: Type}: Std.Commutative (@and α) :=
 -- It is used by the ac_rfl tactic.
 instance IsIdempotentOp_and {α: Type}: Std.IdempotentOp (@and α) :=
   { idempotent := simp_and_idemp }
+
+instance IsLawfulCommIdentity_and {α: Type} : Std.LawfulCommIdentity (@and α) (@universal α) where
+  right_id r := simp_and_universal_r_is_l r
 
 -- Test that ac_rfl uses the instance of Std.Commutative
 example (r s: Lang α):
