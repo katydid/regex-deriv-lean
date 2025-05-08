@@ -10,6 +10,7 @@ import Katydid.Std.NonEmptyList
 
 import Katydid.Regex.Language
 import Katydid.Regex.Ring
+import Katydid.Regex.Quotient
 import Katydid.Regex.SimpleRegex
 import Katydid.Regex.IndexedRegex
 import Katydid.Regex.SmartRegex
