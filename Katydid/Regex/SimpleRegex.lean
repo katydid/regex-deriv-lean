@@ -187,3 +187,46 @@ theorem validate_commutes {α: Type} (r: Regex α) (xs: List α):
 -- https://leanprover.zulipchat.com/#narrow/channel/270676-lean4/topic/restricting.20axioms
 def decidableDenote (r: Regex α): DecidablePred (denote r) :=
   fun xs => decidable_of_decidable_of_eq (validate_commutes r xs)
+
+def smartishOr (x y: Regex α): Regex α :=
+  match x with
+  | Regex.emptyset => y
+  | _ =>
+  match y with
+  | Regex.emptyset => x
+  | _ =>
+  Regex.or x y
+
+theorem Regex.smartishOr_is_or: denote (Regex.or x y) = denote (smartishOr x y) := by
+  induction x with
+  | emptyset =>
+    rw [smartishOr]
+    apply Language.simp_or_emptyset_l_is_r
+  | _ =>
+    induction y with
+    | emptyset =>
+      rw [smartishOr] <;> try (intro H ; contradiction)
+      apply Language.simp_or_emptyset_r_is_l
+    | _ =>
+      rfl
+
+theorem Regex.smartishOr_is_or': denote (Regex.or (Regex.or x y) z) = denote (smartishOr x (Regex.or y z)) := by
+  induction x with
+  | emptyset =>
+    rw [smartishOr]
+    guard_target = denote ((emptyset.or y).or z) = denote (y.or z)
+    -- I want to rewrite with Language.simp_or_emptyset_l_is_r to get
+    -- guard_target = denote (y.or z) = denote (y.or z)
+    -- simp only [Language.simp_or_emptyset_l_is_r]
+    sorry
+  | _ =>
+    induction y with
+    | emptyset =>
+      rw [smartishOr] <;> try (intro H ; contradiction)
+      -- I want to rewrite: (emptyset.or z) to z inside denote (x.or (emptyset.or z))
+      -- apply Language.simp_or_emptyset_r_is_l
+      sorry
+    | _ =>
+      rw [smartishOr] <;>
+      -- these goals are equal up to associativity, but I can't use ac_rfl
+      sorry
