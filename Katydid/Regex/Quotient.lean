@@ -178,15 +178,6 @@ theorem RegexQ.or_idemp' (x: RegexQ α): RegexQ.or x x = x := by
 
 -- test an easy proof on Regex.or
 
-def smartishOr (x y: Regex α): Regex α :=
-  match x with
-  | Regex.emptyset => y
-  | _ =>
-  match y with
-  | Regex.emptyset => x
-  | _ =>
-  Regex.or x y
-
 theorem Regex.smartishOr_is_or: Regex.or x y ≈ smartishOr x y := by
   induction x with
   | emptyset =>
