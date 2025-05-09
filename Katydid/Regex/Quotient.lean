@@ -175,3 +175,48 @@ theorem RegexQ.or_idemp (x: RegexQ α): RegexQ.or x x = x := by
 -- proving idempotency on RegexQ.or using RegexQ.or_idemp
 theorem RegexQ.or_idemp' (x: RegexQ α): RegexQ.or x x = x := by
   rw [RegexQ.or_idemp]
+
+-- test an easy proof on Regex.or
+
+def smartishOr (x y: Regex α): Regex α :=
+  match x with
+  | Regex.emptyset => y
+  | _ =>
+  match y with
+  | Regex.emptyset => x
+  | _ =>
+  Regex.or x y
+
+theorem Regex.smartishOr_is_or: Regex.or x y ≈ smartishOr x y := by
+  induction x with
+  | emptyset =>
+    rw [smartishOr]
+    apply Language.simp_or_emptyset_l_is_r
+  | _ =>
+    induction y with
+    | emptyset =>
+      rw [smartishOr] <;> try (intro H ; contradiction)
+      apply Language.simp_or_emptyset_r_is_l
+    | _ =>
+      rfl
+
+theorem Regex.smartishOr_is_or': Regex.or (Regex.or x y) z ≈ smartishOr x (Regex.or y z) := by
+  induction x with
+  | emptyset =>
+    rw [smartishOr]
+    guard_target = (Regex.or (Regex.or Regex.emptyset y) z) ≈ Regex.or y z
+    -- I want to rewrite with Language.simp_or_emptyset_l_is_r to get
+    -- guard_target = denote (y.or z) = denote (y.or z)
+    -- simp only [Language.simp_or_emptyset_l_is_r]
+    sorry
+  | _ =>
+    induction y with
+    | emptyset =>
+      rw [smartishOr] <;> try (intro H ; contradiction)
+      -- I want to rewrite: (emptyset.or z) to z inside denote (x.or (emptyset.or z))
+      -- apply Language.simp_or_emptyset_r_is_l
+      sorry
+    | _ =>
+      rw [smartishOr] <;> try (intro H ; contradiction) <;> try ac_rfl
+      -- these goals are equal up to associativity, but I can't use ac_rfl
+      sorry
