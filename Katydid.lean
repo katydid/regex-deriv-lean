@@ -9,6 +9,7 @@ import Katydid.Std.Balistic
 import Katydid.Std.NonEmptyList
 
 import Katydid.Regex.Language
+import Katydid.Regex.Ring
 import Katydid.Regex.SimpleRegex
 import Katydid.Regex.IndexedRegex
 import Katydid.Regex.SmartRegex

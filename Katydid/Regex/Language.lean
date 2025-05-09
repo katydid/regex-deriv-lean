@@ -1079,3 +1079,205 @@ def onlyif_false {cond: Prop} {l: List α -> Prop} (condIsFalse: ¬cond):
   case mpr =>
     intro h
     nomatch h
+
+theorem simp_or_concat_left_distrib (a b c : Lang α) : concat a (or b c) = or (concat a b) (concat a c) := by
+  unfold or
+  unfold concat
+  funext xs
+  simp only [exists_eq_left]
+  simp only [eq_iff_iff]
+  simp only [exists_and_left]
+  apply Iff.intro
+  · case mp =>
+    intro H
+    cases H with
+    | intro xs1 H =>
+    cases H with
+    | intro axs1 H =>
+    cases H with
+    | intro x H =>
+    cases H with
+    | intro bc H =>
+    cases bc with
+    | inl Hb =>
+      apply Or.inl
+      exists xs1
+      apply And.intro
+      exact axs1
+      exists x
+    | inr Hc =>
+      apply Or.inr
+      exists xs1
+      apply And.intro
+      exact axs1
+      exists x
+  . case mpr =>
+    intro H
+    cases H with
+    | inl H =>
+      cases H with
+      | intro xs1 H =>
+      cases H with
+      | intro axs1 H =>
+      cases H with
+      | intro x H =>
+      cases H with
+      | intro Hb H =>
+      exists xs1
+      apply And.intro
+      exact axs1
+      exists x
+      apply And.intro
+      apply Or.inl
+      exact Hb
+      exact H
+    | inr H =>
+      cases H with
+      | intro xs1 H =>
+      cases H with
+      | intro axs1 H =>
+      cases H with
+      | intro x H =>
+      cases H with
+      | intro Hc H =>
+      exists xs1
+      apply And.intro
+      exact axs1
+      exists x
+      apply And.intro
+      apply Or.inr
+      exact Hc
+      exact H
+
+theorem simp_or_concat_right_distrib (a b c : Lang α) : concat (or a b) c = or (concat a c) (concat b c) := by
+  unfold or
+  unfold concat
+  funext xs
+  simp only [eq_iff_iff]
+  apply Iff.intro
+  · case mp =>
+    intro H
+    cases H with
+    | intro xs1 H =>
+    cases H with
+    | intro xs2 H =>
+    cases H with
+    | intro Hab H =>
+    cases H with
+    | intro Hc H =>
+    cases Hab with
+    | inl Ha =>
+      apply Or.inl
+      exists xs1
+      exists xs2
+    | inr Hb =>
+      apply Or.inr
+      exists xs1
+      exists xs2
+  · case mpr =>
+    intro H
+    cases H with
+    | inl H =>
+      cases H with
+      | intro xs1 H =>
+      cases H with
+      | intro xs2 H =>
+      cases H with
+      | intro Ha H =>
+      cases H with
+      | intro Hc H =>
+      exists xs1
+      exists xs2
+      apply And.intro
+      · apply Or.inl
+        exact Ha
+      · apply And.intro
+        · exact Hc
+        · exact H
+    | inr H =>
+      cases H with
+      | intro xs1 H =>
+      cases H with
+      | intro xs2 H =>
+      cases H with
+      | intro Hb H =>
+      cases H with
+      | intro Hc H =>
+      exists xs1
+      exists xs2
+      apply And.intro
+      · apply Or.inr
+        exact Hb
+      · apply And.intro
+        · exact Hc
+        · exact H
+
+theorem simp_or_and_left_distrib (a b c : Lang α) : and a (or b c) = or (and a b) (and a c) := by
+  unfold and
+  unfold or
+  funext xs
+  simp only [eq_iff_iff]
+  apply Iff.intro
+  · case mp =>
+    intro H
+    cases H with
+    | intro Ha Hbc =>
+    cases Hbc with
+    | inl Hb =>
+      apply Or.inl
+      apply And.intro Ha Hb
+    | inr Hc =>
+      apply Or.inr
+      apply And.intro Ha Hc
+  · case mpr =>
+    intro H
+    cases H with
+    | inl Hab =>
+      cases Hab with
+      | intro Ha Hb =>
+        apply And.intro
+        exact Ha
+        apply Or.inl
+        exact Hb
+    | inr Hac =>
+      cases Hac with
+      | intro Ha Hc =>
+        apply And.intro
+        exact Ha
+        apply Or.inr
+        exact Hc
+
+theorem simp_or_and_right_distrib (a b c : Lang α) : and (or a b) c = or (and a c) (and b c) := by
+  unfold and
+  unfold or
+  funext xs
+  simp only [eq_iff_iff]
+  apply Iff.intro
+  · case mp =>
+    intro H
+    cases H with
+    | intro Hab Hc =>
+    cases Hab with
+    | inl Ha =>
+      apply Or.inl
+      apply And.intro Ha Hc
+    | inr Hb =>
+      apply Or.inr
+      apply And.intro Hb Hc
+  · case mpr =>
+    intro H
+    cases H with
+    | inl Hac =>
+      cases Hac with
+      | intro Ha Hc =>
+        apply And.intro
+        apply Or.inl
+        exact Ha
+        exact Hc
+    | inr Hbc =>
+      cases Hbc with
+      | intro Hb Hc =>
+        apply And.intro
+        apply Or.inr
+        exact Hb
+        exact Hc
