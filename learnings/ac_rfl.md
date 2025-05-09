@@ -23,6 +23,8 @@ The `ac_rfl` tactic uses instances of the following classes to complete the proo
 * IdempotentOp
 * LawfulIdentity
 
+Given these instances, we can also use the tactic `ac_nf`.
+
 ### Associative
 
 We know that the `concat` operator in a regular expression is associative.
@@ -171,6 +173,22 @@ example (r: Lang α):
   or r emptyset = r := by
   ac_rfl
 ```
+
+## ac_nf
+
+The ac_nf tactic rewrites using associativity, commutativity, idempotency and identity to a normal form.
+
+```lean
+example (r s: Lang α) (H: s = r):
+  or emptyset (or r s) = (or r r) := by
+  ac_nf
+  -- or r s = r
+  rw [H]
+  -- or r r = r
+  ac_rfl
+```
+
+This means it is useful not only for the final step, but also to make progress in a proof.
 
 ## References
 

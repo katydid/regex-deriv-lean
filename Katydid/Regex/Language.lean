@@ -538,6 +538,12 @@ example (r: Lang α):
   concat emptystr r = r := by
   ac_rfl
 
+-- Test ac_nf tactic
+example (r s: Lang α) (H: s = r):
+  concat emptystr r = s := by
+  ac_nf
+  rw [H]
+
 theorem simp_or_emptyset_l_is_r (r: Lang α):
   or emptyset r = r := by
   unfold or
@@ -697,6 +703,13 @@ example (a b c d : Lang α):
 -- Test that ac_rfl uses both the instances of Std.Associative and Std.Commutative and Std.IdempotentOp
 example (a b c d : Lang α):
   (or a (or b (or c d))) = (or a (or d (or (or b c) a))) := by ac_rfl
+
+-- Test ac_nf tactic
+example (r s: Lang α) (H: s = r):
+  or emptyset (or r s) = (or r r) := by
+  ac_nf
+  rw [H]
+  ac_rfl
 
 theorem simp_and_emptyset_l_is_emptyset (r: Lang α):
   and emptyset r = emptyset := by
