@@ -106,6 +106,12 @@ def RegexQ.mk {α : Type} (x: Regex α): RegexQ α :=
 
 Here the specific Setoid is infered.
 
+This `Quotient.mk' x` also introduces notation `⟦x⟧`.
+
+```lean
+⟦x⟧ = Quotient.mk' x = Quot.mk Setoid.r x = RegexQ.mk x
+```
+
 We can also use this to define constructors for each type of Regex, if we want:
 
 ```lean
@@ -254,6 +260,57 @@ denote (Regex.or x1 y1) = denote (Regex.or x2 y2) -> RegexQ.mkOr x1 y1 = RegexQ.
 ```
 
 Which is our proof of `or_respects_eqv`.
+
+## Quotient.ind
+
+When we can't apply `Quotient.sound`, we can consider using `Quotient.ind`.
+`Quotient.ind` can be used to unfold `Quotient.mk'`.
+
+It is easier to explain with an example.
+Remember `RegexQ.or` and `RegexQ.mkOr` that lifted the quotient onto the `Regex.or` constructor.
+
+```lean
+def RegexQ.mkOr {α: Type} (x y: Regex α): RegexQ α :=
+  Quotient.mk' (Regex.or x y)
+
+def RegexQ.or: (RegexQ α -> RegexQ α -> RegexQ α) :=
+  Quotient.lift₂ RegexQ.mkOr orq_respects_eqv
+```
+
+If we want to prove that the quotient respects idempotency for the `or` operator, we need to use `Quotient.ind`:
+
+```lean
+theorem RegexQ.or_idemp (x: RegexQ α): RegexQ.or x x = x := by
+  cases x using Quotient.ind
+  case a x' =>
+  -- guard_hyp x': Regex α
+  -- guard_target = RegexQ.or ⟦x'⟧ ⟦x'⟧ = ⟦x'⟧
+  apply Quotient.sound
+  -- guard_target = Regex.or x' x' ≈ x'
+  apply Language.simp_or_idemp
+```
+
+Notice how we use `guard_hyp` and `guard_target` to document the current state of the proof.
+By applying induction on the quotient via `cases x using Quotient.ind`, our goal becomes:
+
+```lean
+RegexQ.or ⟦x'⟧ ⟦x'⟧ = ⟦x'⟧
+```
+
+This is equivalent to:
+
+```lean
+RegexQ.or (RegexQ.mk x') (RegexQ.mk x') = (RegexQ.mk x')
+```
+
+Or:
+
+```lean
+RegexQ.or (Quotient.mk' x') (Quotient.mk' x') = (Quotient.mk' x')
+```
+
+We have unfolded `x` into `Quotient.mk' x'`.
+Now we can apply `Quotient.sound` and finish our proof.
 
 ## References
 
