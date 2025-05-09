@@ -70,41 +70,6 @@ def RegexQ.mkConcat {α: Type} (x y: Regex α): RegexQ α :=
 def RegexQ.mkStar {α: Type} (x: Regex α): RegexQ α :=
   Quotient.mk' (Regex.star x)
 
--- f = denote ∘ Regex.star
-
-theorem star_respects_eqv:
-  ∀ (x y: Regex α), x ~ y ->
-    denote (Regex.star x) = denote (Regex.star y) := by
-  intro x y
-  intro H
-  unfold denote
-  simp only [H]
-
-def liftStarQLang: (RegexQ α -> Language.Lang α) :=
-  Quotient.lift (fun x => denote (Regex.star x)) star_respects_eqv
-
-def liftStarLang (x: Regex α): Language.Lang α :=
-  liftStarQLang (RegexQ.mk x)
-
--- ⟦x⟧ = Quot.mk Setoid.r x = RegexQ.mk x
--- Notation: backslash [[
-def liftStarLang' (x: Regex α): Language.Lang α :=
-  liftStarQLang ⟦ x ⟧
-
--- f = RegexQ.mkStar
-
-theorem starq_respects_eqv:
-  ∀ (x y: Regex α), x ~ y ->
-    RegexQ.mkStar x = RegexQ.mkStar y := by
-  intro x y
-  intro H
-  apply Quot.sound
-  apply star_respects_eqv
-  apply H
-
-def RegexQ.star: (RegexQ α -> RegexQ α) :=
-  Quotient.lift RegexQ.mkStar starq_respects_eqv
-
 -- f = denote ∘ Regex.or
 
 -- (c : (a₁ : α) → (b₁ : β) → (a₂ : α) → (b₂ : β) → a₁ ≈ a₂ → b₁ ≈ b₂ → f a₁ b₁ = f a₂ b₂)
@@ -149,3 +114,64 @@ theorem concatq_respects_eqv (x1 y1 x2 y2: Regex α) (hx: x1 ~ x2) (hy: y1 ~ y2)
 
 def RegexQ.concat: (RegexQ α -> RegexQ α -> RegexQ α) :=
   Quotient.lift₂ RegexQ.mkConcat concatq_respects_eqv
+
+-- f = denote ∘ Regex.star
+
+theorem star_respects_eqv:
+  ∀ (x y: Regex α), x ~ y ->
+    denote (Regex.star x) = denote (Regex.star y) := by
+  intro x y
+  intro H
+  unfold denote
+  simp only [H]
+
+def liftStarQLang: (RegexQ α -> Language.Lang α) :=
+  Quotient.lift (fun x => denote (Regex.star x)) star_respects_eqv
+
+def liftStarLang (x: Regex α): Language.Lang α :=
+  liftStarQLang (RegexQ.mk x)
+
+-- ⟦x⟧ = Quot.mk Setoid.r x = RegexQ.mk x
+-- Notation: backslash [[
+def liftStarLang' (x: Regex α): Language.Lang α :=
+  liftStarQLang ⟦ x ⟧
+
+-- f = RegexQ.mkStar
+
+theorem starq_respects_eqv:
+  ∀ (x y: Regex α), x ~ y ->
+    RegexQ.mkStar x = RegexQ.mkStar y := by
+  intro x y
+  intro H
+  apply Quot.sound
+  apply star_respects_eqv
+  apply H
+
+def RegexQ.star: (RegexQ α -> RegexQ α) :=
+  Quotient.lift RegexQ.mkStar starq_respects_eqv
+
+-- test using Quotient.ind for a proof
+
+-- proving idempotency on eqv
+theorem Regex.eqv_or_idemp (x: Regex α): Regex.or x x ~ x := by
+  apply Language.simp_or_idemp
+
+-- proving idempotency on RegexQ.mk using Quot.sound
+theorem RegexQ.mk_or_idemp (x: Regex α): RegexQ.mk (Regex.or x x) = RegexQ.mk x := by
+  apply Quot.sound
+  guard_target = (IsSetoid_Regex α).r (Regex.or x x) x
+  apply Language.simp_or_idemp
+
+-- proving idempotency on RegexQ.or using Quotient.ind, Quot.sound and Quotient.lift2
+theorem RegexQ.or_idemp (x: RegexQ α): RegexQ.or x x = x := by
+  cases x using Quotient.ind
+  case a x' =>
+  guard_hyp x': Regex α
+  guard_target = RegexQ.or ⟦ x'⟧ ⟦x'⟧ = ⟦x'⟧
+  apply Quotient.sound
+  guard_target = Regex.or x' x' ≈ x'
+  apply Language.simp_or_idemp
+
+-- proving idempotency on RegexQ.or using RegexQ.or_idemp
+theorem RegexQ.or_idemp' (x: RegexQ α): RegexQ.or x x = x := by
+  rw [RegexQ.or_idemp]
