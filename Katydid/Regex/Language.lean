@@ -1294,3 +1294,62 @@ theorem simp_or_and_right_distrib (a b c : Lang α) : and (or a b) c = or (and a
         apply Or.inr
         exact Hb
         exact Hc
+
+theorem simp_and_or_left_distrib (a b c : Lang α) : or a (and b c) = and (or a b) (or a c) := by
+  unfold and
+  unfold or
+  funext xs
+  simp only [eq_iff_iff]
+  apply Iff.intro
+  · case mp =>
+    intro H
+    cases H with
+    | inl H =>
+      apply And.intro
+      · apply Or.inl H
+      · apply Or.inl H
+    | inr H =>
+      cases H with
+      | intro Hb Hc =>
+      apply And.intro
+      · apply Or.inr Hb
+      · apply Or.inr Hc
+  · case mpr =>
+    intro H
+    cases H with
+    | intro Hab Hac =>
+    cases Hab with
+    | inl Ha =>
+      apply Or.inl Ha
+    | inr Hb =>
+      cases Hac with
+      | inl Ha =>
+        apply Or.inl Ha
+      | inr Hc =>
+        apply Or.inr
+        apply And.intro Hb Hc
+
+theorem simp_and_or_right_distrib (a b c : Lang α) : or (and a b) c = and (or a c) (or b c) := by
+  unfold and
+  unfold or
+  funext xs
+  simp only [eq_iff_iff]
+  apply Iff.intro
+  · case mp =>
+    intro H
+    cases H with
+    | inl h => simp_all only [true_or, and_self]
+    | inr h_1 => simp_all only [or_true, and_self]
+  · case mpr =>
+    intro H
+    cases H with
+    | intro Hleft Hright =>
+    cases Hleft with
+    | inl h =>
+      cases Hright with
+      | inl h_1 => simp_all only [and_self, true_or]
+      | inr h_2 => simp_all only [true_and, or_true]
+    | inr h_1 =>
+      cases Hright with
+      | inl h => simp_all only [and_true, or_true]
+      | inr h_2 => simp_all only [or_true]
