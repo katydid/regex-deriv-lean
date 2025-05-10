@@ -109,7 +109,7 @@ theorem mergeOr_is_correct_sorted_no_dup
   OrIsSortedNoDup (mergeOr x y) := by
   sorry
 
-def smartOr' (x y: Regex α): Regex α :=
+def smartOr (x y: Regex α): Regex α :=
   match x with
   | Regex.emptyset => y
   | Regex.star Regex.any => x
@@ -130,11 +130,11 @@ def smartOr' (x y: Regex α): Regex α :=
     | _ =>
       Regex.or x y
 
-theorem smartOr'_is_correct_denote:
-  denote (Regex.or x y) = denote (smartOr' x y) := by
+theorem smartOr_is_correct_denote:
+  denote (Regex.or x y) = denote (smartOr x y) := by
   sorry
 
-theorem smartOr'_is_correct_sorted_no_dup
+theorem smartOr_is_correct_sorted_no_dup
   {x y: Regex α} (hx: OrIsSortedNoDup x) (hy: OrIsSortedNoDup y):
-  OrIsSortedNoDup (smartOr' x y) := by
+  OrIsSortedNoDup (smartOr x y) := by
   sorry
