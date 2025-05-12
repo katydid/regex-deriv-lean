@@ -67,4 +67,58 @@ theorem lex_right_identity'':
   { rfl }
   { rfl }
 
+def compare_is_decidable_eq {α: Type u} (x y: α) (z: Ordering) [o: Ord α]: Decidable (Ord.compare x y = z) := by
+  cases h: compare x y
+  · case lt =>
+    cases z <;> simp
+    · apply Decidable.isTrue
+      simp only
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+  · case eq =>
+    cases z <;> simp
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+    · apply Decidable.isTrue
+      simp only
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+  · case gt =>
+    cases z <;> simp
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+    · apply Decidable.isTrue
+      simp only
+
+def compare_is_decidable_neq {α: Type u} (x y: α) (z: Ordering) [o: Ord α]: Decidable (Ord.compare x y ≠ z) := by
+  cases h: compare x y
+  · case lt =>
+    cases z <;> simp
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+    · apply Decidable.isTrue
+      simp only
+    · apply Decidable.isTrue
+      simp only
+  · case eq =>
+    cases z <;> simp
+    · apply Decidable.isTrue
+      simp only
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+    · apply Decidable.isTrue
+      simp only
+  · case gt =>
+    cases z <;> simp
+    · apply Decidable.isTrue
+      simp only
+    · apply Decidable.isTrue
+      simp only
+    · apply Decidable.isFalse
+      simp only [not_false_eq_true]
+
 end Ordering
