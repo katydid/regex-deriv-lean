@@ -23,7 +23,7 @@ instance inst_pred_ord {α: Type u} [Ord α]: Ord (Pred α) := inferInstance
 instance inst_pred_deq {α: Type u} [DecidableEq α]: DecidableEq (Pred α) := inferInstance
 instance inst_pred_repr {α: Type u} [Repr α]: Repr (Pred α) := inferInstance
 
-instance inst_pred_decpred {α: Type u} [b: BEq α] [d: DecidableEq α] [o: Ord α] (p: Pred α) : DecidablePred (Pred.eval p) := by
+def pred_is_decpred {α : Type u} [d: DecidableEq α] [o: Ord α] (p: Pred α): (a: α) -> Decidable (Pred.eval p a) := by
   intro x
   match p with
   | Pred.eq y =>
@@ -43,9 +43,12 @@ instance inst_pred_decpred {α: Type u} [b: BEq α] [d: DecidableEq α] [o: Ord 
     apply Ordering.compare_is_decidable_neq
   | Pred.and y1 y2 =>
     unfold Pred.eval
-    have h1 : DecidablePred (Pred.eval y1) := inst_pred_decpred y1
-    have h2 : DecidablePred (Pred.eval y2) := inst_pred_decpred y2
+    have h1 : DecidablePred (Pred.eval y1) := pred_is_decpred y1
+    have h2 : DecidablePred (Pred.eval y2) := pred_is_decpred y2
     infer_instance
+
+instance inst_pred_decpred {α: Type u} [d: DecidableEq α] [o: Ord α] (p: Pred α):
+  DecidablePred (Pred.eval p) := pred_is_decpred p
 
 -- Test several predicates
 example : Pred.eval (Pred.eq 1) 1 = true := by simp [Pred.eval]
@@ -74,12 +77,13 @@ instance inst_deq_lbeq {α: Type u} [DecidableEq (Pred α)]: LawfulBEq (Pred α)
   rfl : {a : Pred α} → a == a := Pred.rfl
 
 class Predicate (α: Type u) (φ: Type v) extends Ord φ, BEq φ, LawfulBEq φ where
-  eval : φ -> α -> Prop
-  -- decPred (p: φ): DecidablePred (eval p)
+  eval (p: φ): α -> Prop
+  decidableEval (p: φ): DecidablePred (eval p)
 
-instance {α: Type u} [BEq α] [Ord α] [d: DecidableEq (Pred α)]: Predicate α (Pred α) where
+instance {α: Type u} [o: Ord α] [da: DecidableEq α] [dp: DecidableEq (Pred α)]: Predicate α (Pred α) where
   eval := Pred.eval
-  eq_of_beq {a b : Pred α} (heq: a == b): a = b := @Pred.eq_of_beq α a b d heq
+  decidableEval := pred_is_decpred
+  eq_of_beq {a b : Pred α} (heq: a == b): a = b := @Pred.eq_of_beq α a b dp heq
   rfl : {a : Pred α} → a == a := Pred.rfl
 
 -- Test that we can compare Predicates, without implementing Ord
@@ -87,11 +91,16 @@ example [Predicate α φ] (x y: φ): Ordering :=
   Ord.compare x y
 
 -- Test several Predicate examples
-instance : Predicate Nat (Pred Nat) where eval := Pred.eval
-instance : Predicate Char (Pred Char) where eval := Pred.eval
+instance : Predicate Nat (Pred Nat) where eval := Pred.eval; decidableEval := pred_is_decpred
+instance : Predicate Char (Pred Char) where eval := Pred.eval; decidableEval := pred_is_decpred
 def isLowerCase: Pred Char := Pred.and (Pred.geq 'a') (Pred.leq 'z')
 example : Predicate.eval isLowerCase 'A' = false := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq]
 example : Predicate.eval isLowerCase 'a' = true := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq]
 example : Predicate.eval isLowerCase 'l' = true := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq]
-def evalPredicate {α: Type u} {φ: Type v} [instPredicate: Predicate α φ] (p: φ) (a: α): Prop := instPredicate.eval p a
+
+-- Test that we can evaluate a Predicate via a generic function based on the class and not a specific instance
+private def evalPredicate {α: Type u} {φ: Type v} [instPredicate: Predicate α φ] (p: φ) (a: α): Prop := instPredicate.eval p a
 example : evalPredicate isLowerCase 'l' = true := by simp [isLowerCase, evalPredicate, Predicate.eval, Pred.eval, compare, compareOfLessAndEq]
+
+-- Test that a Predicate is evaluatable to a Bool
+private def evalDecPredicate {α: Type u} {φ: Type v} [instPredicate: Predicate α φ] (p: φ) (a: α): Bool := (instPredicate.decidableEval p a).decide
