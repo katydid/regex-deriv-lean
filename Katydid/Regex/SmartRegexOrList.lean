@@ -1,12 +1,13 @@
 import Katydid.Std.Linter.DetectClassical
 
 import Katydid.Std.NonEmptyList
+import Katydid.Regex.Predicate
 import Katydid.Regex.SmartRegex
 
 open List
 open SmartRegex
 
-def orToList (x: Regex α): NonEmptyList (Regex α) :=
+def orToList {α: Type u} (x: Regex α): NonEmptyList (Regex α) :=
   match x with
   | Regex.or x1 x2 =>
     -- smartOrList guarantees that left hand side will not be an Regex.or so a recursive call is only required on the right hand side.
@@ -30,7 +31,7 @@ theorem orToList_is_orFromList (x: Regex α):
     rw [NonEmptyList.cons_head]
     congr
 
-theorem simp_star_pred_any_is_universal {α: Type}:
+theorem simp_star_pred_any_is_universal {α: Type} [Ord α]:
   denote (Regex.star (@Regex.any α)) = Language.universal := by
   unfold denote
   exact Language.simp_star_any_is_universal
@@ -55,7 +56,7 @@ theorem simp_or_universal_l_is_universal [Ord α] (x: Regex α):
 -- 6. If at any following step the set is size one, simply return
 -- TODO: 7. If any of the set is nullable, remove emptystr from the set (Language.simp_or_emptystr_null_r_is_r and Language.simp_or_null_l_emptystr_is_l)
 -- 8. Reconstruct Regex.or from the list using orFromList (Language.simp_or_assoc)
-def smartOrList (x y: Regex α): Regex α :=
+def smartOrList [DecidableEq α] [Ord α] (x y: Regex α): Regex α :=
   match x with
   | Regex.emptyset => y
   | Regex.star Regex.any => x
@@ -71,26 +72,26 @@ def smartOrList (x y: Regex α): Regex α :=
     let ors := NonEmptyList.mergeReps xs ys
     orFromList ors
 
-private lemma smartOrList_emptyset_l_is_r (x: Regex α):
+private lemma smartOrList_emptyset_l_is_r [DecidableEq α] [Ord α] (x: Regex α):
   denote (Regex.or Regex.emptyset x) = denote (smartOrList Regex.emptyset x) := by
   simp only [smartOrList]
   nth_rewrite 1 [denote]
   nth_rewrite 1 [denote]
   rw [Language.simp_or_emptyset_l_is_r]
 
-private lemma smartOrList_emptyset_r_is_l':
+private lemma smartOrList_emptyset_r_is_l' [DecidableEq α] [Ord α] (x: Regex α):
   smartOrList x Regex.emptyset = x := by
   simp only [smartOrList]
   split <;> rfl
 
-private lemma smartOrList_emptyset_r_is_l (x: Regex α):
+private lemma smartOrList_emptyset_r_is_l [DecidableEq α] [Ord α] (x: Regex α):
   denote (Regex.or x Regex.emptyset) = denote (smartOrList x Regex.emptyset) := by
   nth_rewrite 1 [denote]
   nth_rewrite 1 [denote]
   rw [Language.simp_or_emptyset_r_is_l]
   rw [smartOrList_emptyset_r_is_l']
 
-private lemma smartOrList_orFromList_mergeReps_orToList_is_or (x y: Regex α):
+private lemma smartOrList_orFromList_mergeReps_orToList_is_or [DecidableEq α] [Ord α] (x y: Regex α):
   denote (orFromList (NonEmptyList.mergeReps (orToList x) (orToList y))) = denote (Regex.or x y):= by
   induction x with
   | emptyset =>
@@ -123,7 +124,7 @@ private lemma smartOrList_orFromList_mergeReps_orToList_is_or (x y: Regex α):
   | star x1 =>
     sorry
 
-lemma simp_or_x_star_any_is_star_any {x: Regex α}:
+lemma simp_or_x_star_any_is_star_any [DecidableEq α] [Ord α] {x: Regex α}:
   denote (Regex.or x (Regex.star Regex.any)) = denote (Regex.star Regex.any) := by
   unfold denote
   unfold denote
@@ -131,7 +132,7 @@ lemma simp_or_x_star_any_is_star_any {x: Regex α}:
   rw [Language.simp_star_any_is_universal]
   rw [Language.simp_or_universal_r_is_universal]
 
-lemma simp_or_star_any_x_is_star_any {x: Regex α}:
+lemma simp_or_star_any_x_is_star_any [DecidableEq α] [Ord α] {x: Regex α}:
   denote (Regex.or (Regex.star Regex.any) x) = denote (Regex.star Regex.any) := by
   unfold denote
   unfold denote
@@ -139,7 +140,7 @@ lemma simp_or_star_any_x_is_star_any {x: Regex α}:
   rw [Language.simp_star_any_is_universal]
   rw [Language.simp_or_universal_l_is_universal]
 
-private lemma smartOrList_emptystr_is_or (y: Regex α):
+private lemma smartOrList_emptystr_is_or [DecidableEq α] [Ord α] (y: Regex α):
   denote (Regex.or Regex.emptystr y) = denote (smartOrList Regex.emptystr y) := by
   cases y with
   | emptyset =>
@@ -156,7 +157,7 @@ private lemma smartOrList_emptystr_is_or (y: Regex α):
     simp only [smartOrList]
     rw [smartOrList_orFromList_mergeReps_orToList_is_or]
 
-private lemma smartOrList_any_is_or (y: Regex α):
+private lemma smartOrList_any_is_or [DecidableEq α] [Ord α] (y: Regex α):
   denote (Regex.or Regex.any y) = denote (smartOrList Regex.any y) := by
   cases y with
   | emptyset =>
@@ -173,7 +174,7 @@ private lemma smartOrList_any_is_or (y: Regex α):
     simp only [smartOrList]
     rw [smartOrList_orFromList_mergeReps_orToList_is_or]
 
-private lemma smartOrList_pred_is_or (p: Predicate α) (y: Regex α):
+private lemma smartOrList_pred_is_or [DecidableEq α] [Ord α] (p: Predicate.Pred α) (y: Regex α):
   denote (Regex.or (Regex.pred p) y) = denote (smartOrList (Regex.pred p) y) := by
   cases y with
   | emptyset =>
@@ -190,7 +191,7 @@ private lemma smartOrList_pred_is_or (p: Predicate α) (y: Regex α):
     simp only [smartOrList]
     rw [smartOrList_orFromList_mergeReps_orToList_is_or]
 
-private lemma smartOrList_star_is_or (x y: Regex α):
+private lemma smartOrList_star_is_or [DecidableEq α] [Ord α] (x y: Regex α):
   denote (Regex.or (Regex.star x) y) = denote (smartOrList (Regex.star x) y) := by
   cases x with
   | any =>
@@ -212,7 +213,7 @@ private lemma smartOrList_star_is_or (x y: Regex α):
       simp only [smartOrList]
       rw [smartOrList_orFromList_mergeReps_orToList_is_or]
 
-private lemma smartOrList_concat_is_or (x1 x2 y: Regex α):
+private lemma smartOrList_concat_is_or [DecidableEq α] [Ord α] (x1 x2 y: Regex α):
   denote (Regex.or (Regex.concat x1 x2) y) = denote (smartOrList (Regex.concat x1 x2) y) := by
   cases y with
   | emptyset =>
@@ -229,7 +230,7 @@ private lemma smartOrList_concat_is_or (x1 x2 y: Regex α):
     simp only [smartOrList]
     rw [smartOrList_orFromList_mergeReps_orToList_is_or]
 
-private lemma smartOrList_or_is_or (x1 x2 y: Regex α):
+private lemma smartOrList_or_is_or [DecidableEq α] [Ord α] (x1 x2 y: Regex α):
   denote (Regex.or (Regex.or x1 x2) y) = denote (smartOrList (Regex.or x1 x2) y) := by
   cases y with
   | emptyset =>
@@ -246,7 +247,7 @@ private lemma smartOrList_or_is_or (x1 x2 y: Regex α):
     simp only [smartOrList]
     rw [smartOrList_orFromList_mergeReps_orToList_is_or]
 
-theorem smartOrList_is_or (x y: Regex α):
+theorem smartOrList_is_or [DecidableEq α] [Ord α] (x y: Regex α):
   denote (Regex.or x y) = denote (smartOrList x y) := by
   induction x with
   | emptyset =>
