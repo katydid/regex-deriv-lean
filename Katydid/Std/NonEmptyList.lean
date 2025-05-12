@@ -2,7 +2,7 @@ import Katydid.Std.Linter.DetectClassical
 import Katydid.Std.Ordering
 import Katydid.Std.Lists
 
-structure NonEmptyList (α: Type) where
+structure NonEmptyList (α: Type u) where
   head : α
   tail : List α
 

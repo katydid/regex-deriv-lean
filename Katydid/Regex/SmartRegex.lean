@@ -2,151 +2,37 @@ import Katydid.Std.Linter.DetectClassical
 import Katydid.Std.NonEmptyList
 
 import Katydid.Regex.Language
+import Katydid.Regex.Predicate
 
 open List
 
 namespace SmartRegex
 
-def mkCharPredFunc (c: Char): Char -> Prop :=
-  (· = c)
-
-instance : DecidablePred (mkCharPredFunc c) := by
-  intro c'
-  unfold mkCharPredFunc
-  by_cases (c' = c)
-  · case pos h =>
-    exact Decidable.isTrue h
-  · case neg h =>
-    exact Decidable.isFalse h
-
-def mkAnyPredFunc: α -> Prop :=
-  fun _ => True
-
-instance : @DecidablePred α mkAnyPredFunc := by
-  intro a
-  unfold mkAnyPredFunc
-  exact Decidable.isTrue True.intro
-
-inductive Predicate (α: Type) where
-  | mk
-    (desc: String)
-    (func: α -> Prop)
-    [decidablePred: DecidablePred func]
-    [ord: Ord α]
-  : Predicate α
-
-def Predicate.compare (x: Predicate α) (y: Predicate α): Ordering :=
-  match (x, y) with
-  | (Predicate.mk xdesc _, Predicate.mk ydesc _) =>
-    Ord.compare xdesc ydesc
-
-instance : Ord (Predicate α) where
-  compare: Predicate α → Predicate α → Ordering := Predicate.compare
-
-def Predicate.mkChar (c: Char): Predicate Char :=
-  Predicate.mk (String.mk [c]) (mkCharPredFunc c)
-
-def evalPredicate (p: Predicate α) (a: α): Bool := by
-  cases p with
-  | @mk _ _ dpred _ =>
-    cases dpred a with
-    | isFalse => exact Bool.false
-    | isTrue => exact Bool.true
-
-inductive Regex (α: Type): Type where
+inductive Regex (α: Type u): Type (u + 1) where
   | emptyset : Regex α
   | emptystr : Regex α
   | any : Regex α -- We introduce any, so that we can apply smart constructor rules based on (star any)
-  | pred : (p: Predicate α) → Regex α
+  | pred : (p: Predicate.Pred α) → Regex α
   | or : Regex α → Regex α → Regex α
   | concat : Regex α → Regex α → Regex α
   | star : Regex α → Regex α
+  deriving Ord, DecidableEq, Repr
 
-def Regex.compare (x y: Regex α): Ordering :=
-  match x with
-  | Regex.emptyset =>
-    match y with
-    | Regex.emptyset =>
-      Ordering.eq
-    | _ =>
-      Ordering.lt
-  | Regex.emptystr =>
-    match y with
-    | Regex.emptyset =>
-      Ordering.gt
-    | Regex.emptystr =>
-      Ordering.eq
-    | _ =>
-      Ordering.lt
-  | Regex.any =>
-    match y with
-    | Regex.emptyset =>
-      Ordering.gt
-    | Regex.emptystr =>
-      Ordering.gt
-    | Regex.any =>
-      Ordering.eq
-    | _ =>
-      Ordering.lt
-  | Regex.pred p1 =>
-    match y with
-    | Regex.emptyset =>
-      Ordering.gt
-    | Regex.emptystr =>
-      Ordering.gt
-    | Regex.pred p2 =>
-      Ord.compare p1 p2
-    | _ =>
-      Ordering.lt
-  | Regex.or x1 x2 =>
-    match y with
-    | Regex.emptyset =>
-      Ordering.gt
-    | Regex.emptystr =>
-      Ordering.gt
-    | Regex.pred _ =>
-      Ordering.gt
-    | Regex.or y1 y2 =>
-      match Regex.compare x1 y1 with
-      | Ordering.eq =>
-        Regex.compare x2 y2
-      | o => o
-    | _ =>
-      Ordering.lt
-  | Regex.concat x1 x2 =>
-    match y with
-    | Regex.emptyset =>
-      Ordering.gt
-    | Regex.emptystr =>
-      Ordering.gt
-    | Regex.pred _ =>
-      Ordering.gt
-    | Regex.or _ _ =>
-      Ordering.gt
-    | Regex.concat y1 y2 =>
-      match Regex.compare x1 y1 with
-      | Ordering.eq =>
-        Regex.compare x2 y2
-      | o => o
-    | _ =>
-      Ordering.lt
-  | Regex.star x1 =>
-    match y with
-    | Regex.star y1 =>
-      Regex.compare x1 y1
-    | _ =>
-      Ordering.lt
-
-instance : Ord (Regex α) where
-  compare (x y: Regex α): Ordering := Regex.compare x y
-
-instance : LE (Regex α) where
+instance [Ord α]: LE (Regex α) where
   le x y := (Ord.compare x y).isLE
 
-instance : BEq (Regex α) where
-  beq x y := Ord.compare x y == Ordering.eq
+instance inst_regex_beq {α: Type u} [DecidableEq (Regex α)]: BEq (Regex α) := inferInstance
 
-def Regex.le (x y: Regex α): Bool :=
+def Regex.eq_of_beq {α: Type u} {a b : Regex α} [d: DecidableEq (Regex α)]
+  (heq: a == b): a = b := of_decide_eq_true heq
+
+def Regex.rfl {α: Type u} {a : Regex α} [d: DecidableEq (Regex α)]: a == a := of_decide_eq_self_eq_true a
+
+instance {α: Type u} [DecidableEq α] : LawfulBEq (Regex α) where
+  eq_of_beq : {a b : Regex α} → a == b → a = b := Regex.eq_of_beq
+  rfl : {a : Regex α} → a == a := Regex.rfl
+
+def Regex.le [Ord α] (x y: Regex α): Bool :=
   x <= y
 
 def onlyif (cond: Prop) [dcond: Decidable cond] (r: Regex α): Regex α :=
@@ -155,12 +41,12 @@ def onlyif (cond: Prop) [dcond: Decidable cond] (r: Regex α): Regex α :=
 def onlyif' {cond: Prop} (dcond: Decidable cond) (r: Regex α): Regex α :=
   if cond then r else Regex.emptyset
 
-def denote {α: Type} (r: Regex α): Language.Lang α :=
+def denote {α: Type} [Ord α] (r: Regex α): Language.Lang α :=
   match r with
   | Regex.emptyset => Language.emptyset
   | Regex.emptystr => Language.emptystr
   | Regex.any => Language.any
-  | Regex.pred (@Predicate.mk _ _ func _ _) => Language.pred func
+  | Regex.pred p => Language.pred p.eval
   | Regex.or x y => Language.or (denote x) (denote y)
   | Regex.concat x y => Language.concat (denote x) (denote y)
   | Regex.star x => Language.star (denote x)
@@ -176,7 +62,7 @@ def null (r: Regex α): Bool :=
   | Regex.star _ => true
 
 -- copy of SimpleRegex.null_commutes
-theorem null_commutes {α: Type} (r: Regex α):
+theorem null_commutes {α: Type} [Ord α] (r: Regex α):
   ((null r) = true) = Language.null (denote r) := by
   induction r with
   | emptyset =>
@@ -230,7 +116,7 @@ def smartStar (x: Regex α): Regex α :=
   | Regex.star _ => x
   | _ => Regex.star x
 
-theorem smartStar_is_star (x: Regex α):
+theorem smartStar_is_star [Ord α] (x: Regex α):
   denote (Regex.star x) = denote (smartStar x) := by
   cases x with
   | emptyset =>
@@ -272,7 +158,7 @@ def smartConcat (x y: Regex α): Regex α :=
       | Regex.emptystr => x
       | _otherwise => Regex.concat x y
 
-theorem smartConcat_is_concat {α: Type} (x y: Regex α):
+theorem smartConcat_is_concat {α: Type} [Ord α] (x y: Regex α):
   denote (Regex.concat x y) = denote (smartConcat x y) := by
   cases x with
   | emptyset =>
@@ -314,12 +200,12 @@ theorem smartConcat_is_concat {α: Type} (x y: Regex α):
     · case emptystr =>
       apply Language.simp_concat_emptystr_r_is_l
 
-def derive (r: Regex α) (a: α): Regex α :=
+def derive [Ord α] [DecidableEq α] (r: Regex α) (a: α): Regex α :=
   match r with
   | Regex.emptyset => Regex.emptyset
   | Regex.emptystr => Regex.emptyset
   | Regex.any => Regex.emptystr
-  | Regex.pred (@Predicate.mk _ _ _ decfunc _) => onlyif' (decfunc a) Regex.emptystr
+  | Regex.pred p => onlyif' (p.decidableEval a) Regex.emptystr
   | Regex.or x y =>
       -- TODO: SmartRegex.smartOr (derive x a) (derive y a)
       Regex.or (derive x a) (derive y a)
@@ -331,12 +217,12 @@ def derive (r: Regex α) (a: α): Regex α :=
   | Regex.star x =>
       SmartRegex.smartConcat (derive x a) (Regex.star x)
 
-lemma derive_commutes_emptyset {x: α}:
+lemma derive_commutes_emptyset [Ord α] [DecidableEq α] {x: α}:
   denote (derive Regex.emptyset x) = Language.derive (denote Regex.emptyset) x := by
   funext xs
   simp only [denote, Language.emptyset, Language.derive, Language.derives]
 
-lemma derive_commutes_emptystr {x: α}:
+lemma derive_commutes_emptystr [Ord α] [DecidableEq α] {x: α}:
   denote (derive Regex.emptystr x) = Language.derive (denote Regex.emptystr) x := by
   funext xs
   simp only [
@@ -346,7 +232,7 @@ lemma derive_commutes_emptystr {x: α}:
     reduceCtorEq,
   ]
 
-lemma derive_commutes_any {x: α}:
+lemma derive_commutes_any [Ord α] [DecidableEq α] {x: α}:
   denote (derive Regex.any x) = Language.derive (denote Regex.any) x := by
   funext xs
   unfold derive
@@ -355,27 +241,25 @@ lemma derive_commutes_any {x: α}:
   simp only [Language.emptystr, Language.derive, Language.derives, singleton_append, cons.injEq,
     exists_and_right, exists_eq', true_and]
 
-lemma derive_commutes_pred {p: Predicate α} {x: α}:
+lemma derive_commutes_pred [Ord α] [DecidableEq α] {p: Predicate.Pred α} {x: α}:
   denote (derive (Regex.pred p) x) = Language.derive (denote (Regex.pred p)) x := by
   funext xs
-  cases p with
-  | @mk _ pred decidablePred _ =>
-    simp only [derive, Language.derive, Language.derives, denote, singleton_append, eq_iff_iff]
-    rw [onlyif', Language.pred]
-    split_ifs with h
-    · rw [denote]
-      simp only [Language.emptystr, cons.injEq]
-      apply Iff.intro
-      · intro hxs
-        use x
-      · intro ⟨w, hxs, hp⟩
-        exact hxs.right
-    · rw [denote]
-      simp only [Language.emptyset, cons.injEq, false_iff, not_exists, not_and, and_imp, forall_eq']
-      intro _ h'
-      contradiction
+  simp only [derive, Language.derive, Language.derives, denote, singleton_append, eq_iff_iff]
+  rw [onlyif', Language.pred]
+  split_ifs with h
+  · rw [denote]
+    simp only [Language.emptystr, cons.injEq]
+    apply Iff.intro
+    · intro hxs
+      use x
+    · intro ⟨w, hxs, hp⟩
+      exact hxs.right
+  · rw [denote]
+    simp only [Language.emptyset, cons.injEq, false_iff, not_exists, not_and, and_imp, forall_eq']
+    intro _ h'
+    contradiction
 
-lemma derive_commutes_or {r1 r2: Regex α} {x: α}
+lemma derive_commutes_or [Ord α] [DecidableEq α] {r1 r2: Regex α} {x: α}
   (ih1: denote (derive r1 x) = Language.derive (denote r1) x)
   (ih2: denote (derive r2 x) = Language.derive (denote r2) x):
   denote (derive (Regex.or r1 r2) x) = Language.derive (denote (r1.or r2)) x := by
@@ -386,7 +270,7 @@ lemma derive_commutes_or {r1 r2: Regex α} {x: α}
   rw [ih1, ih2]
   rfl
 
-lemma derive_commutes_concat {r1 r2: Regex α} {x: α}
+lemma derive_commutes_concat [Ord α] [DecidableEq α] {r1 r2: Regex α} {x: α}
   (ih1 : denote (derive r1 x) = Language.derive (denote r1) x)
   (ih2 : denote (derive r2 x) = Language.derive (denote r2) x):
   denote (derive (r1.concat r2) x) = Language.derive (denote (r1.concat r2)) x := by
@@ -431,7 +315,7 @@ lemma derive_commutes_concat {r1 r2: Regex α} {x: α}
       rw [hxs.left]
       exact Or.inl ⟨ws, h, zs, h', hxs.right⟩
 
-lemma derive_commutes_star {r: Regex α} {x: α}
+lemma derive_commutes_star [Ord α] [DecidableEq α] {r: Regex α} {x: α}
   (ih : denote (derive r x) = Language.derive (denote r) x):
   denote (derive r.star x) = Language.derive (denote r.star) x := by
   funext xs
@@ -453,7 +337,7 @@ lemma derive_commutes_star {r: Regex α} {x: α}
       rw [ih, hxs.left]
       exact ⟨ys, h, zs, h', hxs.right⟩
 
-theorem derive_commutes {α: Type} (r: Regex α) (x: α):
+theorem derive_commutes {α: Type} [Ord α] [DecidableEq α] (r: Regex α) (x: α):
   denote (derive r x) = Language.derive (denote r) x := by
   induction r with
   | emptyset =>
@@ -471,11 +355,11 @@ theorem derive_commutes {α: Type} (r: Regex α) (x: α):
   | star r ih =>
     exact derive_commutes_star ih
 
-def derives (r: Regex α) (xs: List α): Regex α :=
+def derives [Ord α] [DecidableEq α] (r: Regex α) (xs: List α): Regex α :=
   (List.foldl derive r) xs
 
 -- copy of SimpleRegex.derives_commutes
-theorem derives_commutes {α: Type} (r: Regex α) (xs: List α):
+theorem derives_commutes {α: Type} [Ord α] [DecidableEq α] (r: Regex α) (xs: List α):
   denote (derives r xs) = Language.derives (denote r) xs := by
   unfold derives
   rw [Language.derives_foldl]
@@ -493,11 +377,11 @@ theorem derives_commutes {α: Type} (r: Regex α) (xs: List α):
     rw [h] at ih'
     exact ih'
 
-def validate (r: Regex α) (xs: List α): Bool :=
+def validate [Ord α] [DecidableEq α] (r: Regex α) (xs: List α): Bool :=
   null (derives r xs)
 
 -- copy of SimpleRegex.validate_commutes
-theorem validate_commutes {α: Type} (r: Regex α) (xs: List α):
+theorem validate_commutes {α: Type} [Ord α] [DecidableEq α] (r: Regex α) (xs: List α):
   (validate r xs = true) = (denote r) xs := by
   rw [<- Language.validate (denote r) xs]
   unfold validate
@@ -506,5 +390,5 @@ theorem validate_commutes {α: Type} (r: Regex α) (xs: List α):
 
 -- decidableDenote shows that the derivative algorithm is decidable
 -- copy of SimpleRegex.decidableDenote
-def decidableDenote (r: Regex α): DecidablePred (denote r) :=
+def decidableDenote [Ord α] [DecidableEq α] (r: Regex α): DecidablePred (denote r) :=
   fun xs => decidable_of_decidable_of_eq (validate_commutes r xs)

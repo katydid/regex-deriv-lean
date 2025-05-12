@@ -1,5 +1,7 @@
 import Katydid.Std.Ordering
 
+namespace Predicate
+
 inductive Pred (α: Type u): Type (u + 1) where
   | eq (x: α): Pred α
   | lt (x: α): Pred α
@@ -9,7 +11,7 @@ inductive Pred (α: Type u): Type (u + 1) where
   | and (p1 p2: Pred α): Pred α
   deriving Ord, DecidableEq, Repr
 
-def Pred.eval {α: Type u} [Ord α] [BEq α] (p: Pred α) (x: α): Prop :=
+def Pred.eval {α: Type u} [Ord α] (p: Pred α) (x: α): Prop :=
   match p with
   | Pred.eq y => x = y
   | Pred.lt y => Ord.compare x y = Ordering.lt
@@ -23,32 +25,25 @@ instance inst_pred_ord {α: Type u} [Ord α]: Ord (Pred α) := inferInstance
 instance inst_pred_deq {α: Type u} [DecidableEq α]: DecidableEq (Pred α) := inferInstance
 instance inst_pred_repr {α: Type u} [Repr α]: Repr (Pred α) := inferInstance
 
-def pred_is_decpred {α : Type u} [d: DecidableEq α] [o: Ord α] (p: Pred α): (a: α) -> Decidable (Pred.eval p a) := by
-  intro x
+def pred_is_decpred {α : Type u} [d: DecidableEq α] [o: Ord α] (p: Pred α): (a: α) -> Decidable (Pred.eval p a) :=
+  fun x =>
   match p with
-  | Pred.eq y =>
-    unfold Pred.eval
-    apply d
-  | Pred.lt y =>
-    unfold Pred.eval
-    apply Ordering.compare_is_decidable_eq
-  | Pred.leq y =>
-    unfold Pred.eval
-    apply Ordering.compare_is_decidable_neq
-  | Pred.gt y =>
-    unfold Pred.eval
-    apply Ordering.compare_is_decidable_eq
-  | Pred.geq y =>
-    unfold Pred.eval
-    apply Ordering.compare_is_decidable_neq
-  | Pred.and y1 y2 =>
+  | Pred.eq y => d x y
+  | Pred.lt y => Ordering.compare_is_decidable_eq x y Ordering.lt
+  | Pred.leq y => Ordering.compare_is_decidable_neq x y Ordering.gt
+  | Pred.gt y => Ordering.compare_is_decidable_eq x y Ordering.gt
+  | Pred.geq y => Ordering.compare_is_decidable_neq x y Ordering.lt
+  | Pred.and y1 y2 => by
     unfold Pred.eval
     have h1 : DecidablePred (Pred.eval y1) := pred_is_decpred y1
     have h2 : DecidablePred (Pred.eval y2) := pred_is_decpred y2
     infer_instance
 
-instance inst_pred_decpred {α: Type u} [d: DecidableEq α] [o: Ord α] (p: Pred α):
-  DecidablePred (Pred.eval p) := pred_is_decpred p
+def Pred.decidableEval {α: Type u} [Ord α] [d: DecidableEq α] (p: Pred α) : DecidablePred p.eval :=
+  pred_is_decpred p
+
+instance inst_pred_decpred {α: Type u} [d: DecidableEq α] [o: Ord α] (p: Pred α): DecidablePred p.eval :=
+  p.decidableEval
 
 -- Test several predicates
 example : Pred.eval (Pred.eq 1) 1 = true := by simp [Pred.eval]
@@ -64,8 +59,8 @@ instance inst_pred_lbeq {α: Type u} [DecidableEq (Pred α)]: LawfulBEq (Pred α
 -- Test that BEq is inferred for our specific inductive type
 instance inst_pred_beq {α: Type u} [DecidableEq (Pred α)]: BEq (Pred α) := inferInstance
 
-def Pred.eq_of_beq {α: Type u}
-  {a b : Pred α} [d: DecidableEq (Pred α)] (heq: a == b): a = b := of_decide_eq_true heq
+def Pred.eq_of_beq {α: Type u} {a b : Pred α} [d: DecidableEq (Pred α)]
+  (heq: a == b): a = b := of_decide_eq_true heq
 
 def Pred.eq_of_beq' {α: Type u} {a b : Pred α} [d: DecidableEq (Pred α)] (heq: a == b): a = b := by
   refine @of_decide_eq_true (a = b) (d a b) heq
