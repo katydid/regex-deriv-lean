@@ -21,6 +21,9 @@ inductive Regex (α: Type u): Type (u + 1) where
 instance [Ord α]: LE (Regex α) where
   le x y := (Ord.compare x y).isLE
 
+instance [Ord α]: LT (Regex α) where
+  lt x y := (Ord.compare x y) = Ordering.lt
+
 instance inst_regex_beq {α: Type u} [DecidableEq (Regex α)]: BEq (Regex α) := inferInstance
 
 def Regex.eq_of_beq {α: Type u} {a b : Regex α} [d: DecidableEq (Regex α)]

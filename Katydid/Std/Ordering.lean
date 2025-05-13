@@ -168,5 +168,3 @@ instance {α: Type u} [Ord α]: LE α where
 instance {α: Type u} [Ord α] (x y: α): Decidable (x < y) := inferInstance
 
 instance {α: Type u} [Ord α] (x y: α): Decidable (x ≤ y) := inferInstance
-
-end Ordering

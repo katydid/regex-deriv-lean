@@ -6,6 +6,23 @@ import Katydid.Regex.SmartRegex
 
 open SmartRegex
 
+def Regex.isOr (x: Regex α) : Prop :=
+  ∃ x1 x2, x = Regex.or x1 x2
+
+def Regex.isLeftNestedOr (x: Regex α) : Prop :=
+  ∃ x1 x2 x3, x = Regex.or (Regex.or x1 x2) x3
+
+def Regex.isTerminatingSmartOr [LT (Regex α)] (x: Regex α): Prop :=
+  ∃ x1 x2,
+    x = Regex.or x1 x2
+    /\ Not (Regex.isOr x1)
+    /\ Not (Regex.isOr x2)
+    /\ x1 ≠ Regex.star (Regex.any)
+    /\ x2 ≠ Regex.star (Regex.any)
+    /\ x1 ≠ Regex.emptyset
+    /\ x2 ≠ Regex.emptyset
+    /\ x1 < x2
+
 def OrIsSortedNoDup [Ord α] (x: Regex α) : Prop :=
   match x with
   | Regex.or (Regex.or _ _) _ =>
@@ -86,7 +103,6 @@ def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
 theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (insertOr x y) := by
   induction x with
-    sorry
   | _ =>
     sorry
 
