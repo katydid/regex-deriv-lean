@@ -90,21 +90,34 @@ theorem mkOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq α] (x y:
 def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match x with
   | Regex.or x1 x2 =>
-    match Ord.compare x1 y with
-    | Ordering.lt =>
-      Regex.or x (insertOr x2 y)
-    | Ordering.eq =>
-      x
-    | Ordering.gt =>
-      Regex.or x1 (Regex.or y x2)
+    if x1 = y
+    then x
+    else if x1 < y
+    then Regex.or x (insertOr x2 y)
+    else Regex.or x1 (Regex.or y x2)
   | _ =>
     mkOr x y
 
 theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (insertOr x y) := by
   induction x with
+  | or x1 x2 ih1 ih2 =>
+    unfold insertOr
+    split_ifs
+    · case pos h =>
+      rw [h]
+      simp only [denote]
+      ac_rfl
+    · case pos h =>
+      simp only [denote]
+      rw [<- ih2]
+      simp only [denote]
+      ac_rfl
+    · case neg h =>
+      simp only [denote]
+      ac_rfl
   | _ =>
-    sorry
+    apply mkOr_is_correct_denote
 
 def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match x with
