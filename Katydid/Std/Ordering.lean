@@ -121,4 +121,52 @@ def compare_is_decidable_neq {α: Type u} (x y: α) (z: Ordering) [o: Ord α]: D
     · apply Decidable.isFalse
       simp only [not_false_eq_true]
 
+def compare_isle_is_decidable {α: Type u} (x y: α) [o: Ord α]: Decidable (Ord.compare x y).isLE := by
+  unfold isLE
+  cases h: compare x y
+  · case lt =>
+    simp only
+    apply Decidable.isTrue
+    simp only
+  · case eq =>
+    simp only
+    apply Decidable.isTrue
+    simp only
+  · case gt =>
+    simp only
+    apply Decidable.isFalse
+    simp only [Bool.false_eq_true, not_false_eq_true]
+
+def compare_isge_is_decidable {α: Type u} (x y: α) [o: Ord α]: Decidable (Ord.compare x y).isGE := by
+  unfold isGE
+  cases h: compare x y
+  · case lt =>
+    simp only
+    apply Decidable.isFalse
+    simp only [Bool.false_eq_true, not_false_eq_true]
+  · case eq =>
+    simp only
+    apply Decidable.isTrue
+    simp only
+  · case gt =>
+    simp only
+    apply Decidable.isTrue
+    simp only
+
+instance {α: Type u} [Ord α] : DecidableRel (@LT.lt α ltOfOrd) :=
+  inferInstanceAs (DecidableRel (fun a b => compare a b = Ordering.lt))
+
+instance {α: Type u} [Ord α] : DecidableRel (@LE.le α leOfOrd) :=
+  inferInstanceAs (DecidableRel (fun a b => (compare a b).isLE))
+
+instance {α: Type u} [Ord α]: LT α where
+  lt : α → α → Prop := fun x y => Ord.compare x y = Ordering.lt
+
+instance {α: Type u} [Ord α]: LE α where
+  le : α → α → Prop := fun x y => (Ord.compare x y).isLE
+
+instance {α: Type u} [Ord α] (x y: α): Decidable (x < y) := inferInstance
+
+instance {α: Type u} [Ord α] (x y: α): Decidable (x ≤ y) := inferInstance
+
 end Ordering

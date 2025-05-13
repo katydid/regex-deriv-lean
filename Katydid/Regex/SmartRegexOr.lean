@@ -1,5 +1,7 @@
 import Katydid.Std.Linter.DetectClassical
 
+import Katydid.Std.Ordering
+
 import Katydid.Regex.SmartRegex
 
 open SmartRegex
@@ -41,33 +43,23 @@ def OrIsSmart [Ord α] (x: Regex α) : Prop :=
   (Not (OrContainsStarAny x)) /\
   (Not (OrContainsEmptyset x))
 
-def mkOr [Ord α] (x y: Regex α): Regex α :=
-  match Ord.compare x y with
-  | Ordering.lt =>
-    Regex.or x y
-  | Ordering.eq =>
-    x
-  | Ordering.gt =>
-    Regex.or y x
+def mkOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
+  if x = y
+  then x
+  else if x < y
+  then Regex.or x y
+  else Regex.or y x
 
-theorem mkOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq (Regex α)] (x y: Regex α):
+theorem mkOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (mkOr x y) := by
   unfold mkOr
-  cases h: compare x y with
-  | lt =>
-    simp only
-  | eq =>
-    simp only
-    cases dr x y
-    case isFalse =>
-      have h'' := Ord.toBEq o
-      -- contradiction
-      sorry
-    case isTrue heq =>
-      rw [heq]
-      apply Language.simp_or_idemp
-  | gt =>
-    simp only
+  split_ifs
+  · case pos h =>
+    rw [h]
+    apply Language.simp_or_idemp
+  · case pos h =>
+    rfl
+  · case neg h =>
     apply Language.simp_or_comm
 
 -- insertOr inserts y into x, where x might be or expression and y is not.
@@ -78,7 +70,7 @@ theorem mkOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq (Regex α
 --   insertOr (Regex.or a c) a = Regex.or a c
 --   insertOr a b = Regex.or a b
 --   insertOr a a = a
-def insertOr [Ord α] (x y: Regex α): Regex α :=
+def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match x with
   | Regex.or x1 x2 =>
     match Ord.compare x1 y with
@@ -91,14 +83,14 @@ def insertOr [Ord α] (x y: Regex α): Regex α :=
   | _ =>
     mkOr x y
 
-theorem insertOr_is_correct_denote {α: Type} [Ord α] (x y: Regex α):
+theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (insertOr x y) := by
   induction x with
     sorry
   | _ =>
     sorry
 
-def mergeOr {α: Type} [Ord α] (x y: Regex α): Regex α :=
+def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match x with
   | Regex.or x1 x2 =>
     match y with
@@ -110,16 +102,16 @@ def mergeOr {α: Type} [Ord α] (x y: Regex α): Regex α :=
     | _ => insertOr x y
   | _ => insertOr y x
 
-theorem mergeOr_is_correct_denote {α: Type} [Ord α] (x y: Regex α):
+theorem mergeOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (mergeOr x y) := by
   sorry
 
 theorem mergeOr_is_correct_sorted_no_dup
-  {α: Type} [Ord α] (x y: Regex α) (hx: OrIsSortedNoDup x) (hy: OrIsSortedNoDup y):
+  {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSortedNoDup x) (hy: OrIsSortedNoDup y):
   OrIsSortedNoDup (mergeOr x y) := by
   sorry
 
-def smartOr {α: Type} [Ord α] (x y: Regex α): Regex α :=
+def smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match x with
   | Regex.emptyset => y
   | Regex.star Regex.any => x
@@ -140,11 +132,11 @@ def smartOr {α: Type} [Ord α] (x y: Regex α): Regex α :=
     | _ =>
       Regex.or x y
 
-theorem smartOr_is_correct_denote {α: Type} [Ord α] (x y: Regex α):
+theorem smartOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (smartOr x y) := by
   sorry
 
 theorem smartOr_is_correct_sorted_no_dup
-  {α: Type} [Ord α] (x y: Regex α) (hx: OrIsSortedNoDup x) (hy: OrIsSortedNoDup y):
+  {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSortedNoDup x) (hy: OrIsSortedNoDup y):
   OrIsSortedNoDup (smartOr x y) := by
   sorry
