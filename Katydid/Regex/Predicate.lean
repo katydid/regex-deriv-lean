@@ -5,9 +5,9 @@ namespace Predicate
 inductive Pred (α: Type u): Type (u + 1) where
   | eq (x: α): Pred α
   | lt (x: α): Pred α
-  | leq (x: α): Pred α
+  | le (x: α): Pred α
   | gt (x: α): Pred α
-  | geq (x: α): Pred α
+  | ge (x: α): Pred α
   | and (p1 p2: Pred α): Pred α
   deriving Ord, DecidableEq, Repr
 
@@ -15,9 +15,9 @@ def Pred.eval {α: Type u} [Ord α] (p: Pred α) (x: α): Prop :=
   match p with
   | Pred.eq y => x = y
   | Pred.lt y => Ord.compare x y = Ordering.lt
-  | Pred.leq y => Ord.compare x y ≠ Ordering.gt
+  | Pred.le y => (Ord.compare x y).isLE
   | Pred.gt y => Ord.compare x y = Ordering.gt
-  | Pred.geq y => Ord.compare x y ≠ Ordering.lt
+  | Pred.ge y => (Ord.compare x y).isGE
   | Pred.and p1 p2 => Pred.eval p1 x /\ Pred.eval p2 x
 
 -- Test that instances of recursively inferred:
@@ -30,9 +30,9 @@ def pred_is_decpred {α : Type u} [d: DecidableEq α] [o: Ord α] (p: Pred α): 
   match p with
   | Pred.eq y => d x y
   | Pred.lt y => Ordering.compare_is_decidable_eq x y Ordering.lt
-  | Pred.leq y => Ordering.compare_is_decidable_neq x y Ordering.gt
+  | Pred.le y => Ordering.compare_isle_is_decidable x y
   | Pred.gt y => Ordering.compare_is_decidable_eq x y Ordering.gt
-  | Pred.geq y => Ordering.compare_is_decidable_neq x y Ordering.lt
+  | Pred.ge y => Ordering.compare_isge_is_decidable x y
   | Pred.and y1 y2 => by
     unfold Pred.eval
     have h1 : DecidablePred (Pred.eval y1) := pred_is_decpred y1
@@ -48,10 +48,10 @@ instance inst_pred_decpred {α: Type u} [d: DecidableEq α] [o: Ord α] (p: Pred
 -- Test several predicates
 example : Pred.eval (Pred.eq 1) 1 = true := by simp [Pred.eval]
 example : Pred.eval (Pred.eq 2) 1 = false := by simp [Pred.eval, Nat.reduceEqDiff, Bool.false_eq_true]
-def isUpperCase: Pred Char := Pred.and (Pred.geq 'A') (Pred.leq 'Z')
-example : Pred.eval isUpperCase 'A' = true := by simp [isUpperCase, Pred.eval, compare, compareOfLessAndEq]
-example : Pred.eval isUpperCase 'a' = false := by simp [isUpperCase, Pred.eval, compare, compareOfLessAndEq]
-example : Pred.eval isUpperCase 'U' = true := by simp [isUpperCase, Pred.eval, compare, compareOfLessAndEq]
+def isUpperCase: Pred Char := Pred.and (Pred.ge 'A') (Pred.le 'Z')
+example : Pred.eval isUpperCase 'A' = true := by simp [isUpperCase, Pred.eval, compare, compareOfLessAndEq, Ordering.isGE, Ordering.isLE]
+example : Pred.eval isUpperCase 'a' = false := by simp [isUpperCase, Pred.eval, compare, compareOfLessAndEq, Ordering.isGE, Ordering.isLE]
+example : Pred.eval isUpperCase 'U' = true := by simp [isUpperCase, Pred.eval, compare, compareOfLessAndEq, Ordering.isGE, Ordering.isLE]
 
 -- Test that LawfulBEq is inferred for our specific inductive type
 instance inst_pred_lbeq {α: Type u} [DecidableEq (Pred α)]: LawfulBEq (Pred α) := inferInstance
@@ -88,14 +88,14 @@ example [Predicate α φ] (x y: φ): Ordering :=
 -- Test several Predicate examples
 instance : Predicate Nat (Pred Nat) where eval := Pred.eval; decidableEval := pred_is_decpred
 instance : Predicate Char (Pred Char) where eval := Pred.eval; decidableEval := pred_is_decpred
-def isLowerCase: Pred Char := Pred.and (Pred.geq 'a') (Pred.leq 'z')
-example : Predicate.eval isLowerCase 'A' = false := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq]
-example : Predicate.eval isLowerCase 'a' = true := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq]
-example : Predicate.eval isLowerCase 'l' = true := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq]
+def isLowerCase: Pred Char := Pred.and (Pred.ge 'a') (Pred.le 'z')
+example : Predicate.eval isLowerCase 'A' = false := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq, Ordering.isGE, Ordering.isLE]
+example : Predicate.eval isLowerCase 'a' = true := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq, Ordering.isGE, Ordering.isLE]
+example : Predicate.eval isLowerCase 'l' = true := by simp [isLowerCase, Predicate.eval, Pred.eval, compare, compareOfLessAndEq, Ordering.isGE, Ordering.isLE]
 
 -- Test that we can evaluate a Predicate via a generic function based on the class and not a specific instance
 private def evalPredicate {α: Type u} {φ: Type v} [instPredicate: Predicate α φ] (p: φ) (a: α): Prop := instPredicate.eval p a
-example : evalPredicate isLowerCase 'l' = true := by simp [isLowerCase, evalPredicate, Predicate.eval, Pred.eval, compare, compareOfLessAndEq]
+example : evalPredicate isLowerCase 'l' = true := by simp [isLowerCase, evalPredicate, Predicate.eval, Pred.eval, compare, compareOfLessAndEq, Ordering.isGE, Ordering.isLE]
 
 -- Test that a Predicate is evaluatable to a Bool
 private def evalDecPredicate {α: Type u} {φ: Type v} [instPredicate: Predicate α φ] (p: φ) (a: α): Bool := (instPredicate.decidableEval p a).decide
