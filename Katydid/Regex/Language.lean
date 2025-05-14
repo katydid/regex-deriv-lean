@@ -1353,3 +1353,13 @@ theorem simp_and_or_right_distrib (a b c : Lang α) : or (and a b) c = and (or a
       cases Hright with
       | inl h => simp_all only [and_true, or_true]
       | inr h_2 => simp_all only [or_true]
+
+theorem simp_or_star_any_l_is_star_any (r: Lang α):
+  or (star any) r = (star any) := by
+  rw [simp_star_any_is_universal]
+  rw [simp_or_universal_l_is_universal]
+
+theorem simp_or_star_any_r_is_star_any (r: Lang α):
+  or r (star any) = (star any) := by
+  rw [simp_star_any_is_universal]
+  rw [simp_or_universal_r_is_universal]
