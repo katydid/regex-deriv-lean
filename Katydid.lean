@@ -14,7 +14,7 @@ import Katydid.Regex.Ring
 import Katydid.Regex.Quotient
 import Katydid.Regex.SimpleRegex
 import Katydid.Regex.IndexedRegex
-import Katydid.Regex.SmartRegex
-import Katydid.Regex.SmartRegexOr
+import Katydid.Regex.Smart.SmartRegex
+import Katydid.Regex.Smart.SmartRegexOr
 
 import Katydid.Expr.Desc
