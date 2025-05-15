@@ -52,7 +52,6 @@ theorem null_commutes {α: Type} [Ord α] (r: Regex α):
     unfold null
     simp only
 
-
 theorem smartStar_is_star [Ord α] (x: Regex α):
   denote (Regex.star x) = denote (smartStar x) := by
   cases x with
