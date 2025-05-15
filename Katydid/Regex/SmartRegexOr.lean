@@ -128,35 +128,24 @@ def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match x with
   | Regex.or x1 x2 =>
     match y with
-    | Regex.or y1 y2 =>
-      if x1 = y1
-      then mergeOr x2 y
-      else if x1 < y1
-      then Regex.or x1 (insertOr y1 (mergeOr x2 y2))
-      else Regex.or y1 (insertOr x1 (mergeOr x2 y2))
+    | Regex.or _ _ =>
+      insertOr (mergeOr x2 y) x1
     | _ => insertOr x y
   | _ => insertOr y x
 
 theorem mergeOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (mergeOr x y) := by
-  induction x with
+  induction x generalizing y with
   | or x1 x2 ihx1 ihx2 =>
     induction y with
     | or y1 y2 ihy1 ihy2 =>
       rw [mergeOr]
-      split_ifs
-      case pos h =>
-        rw [h]
-        rw [<- ihx2]
-        simp only [denote]
-        ac_rfl
-      case pos h =>
-        repeat rw [denote]
-        rw [<- insertOr_is_correct_denote]
-        repeat rw [<- denote]
-        sorry
-      case neg h =>
-        sorry
+      repeat rw [denote]
+      rw [<- insertOr_is_correct_denote]
+      repeat rw [denote]
+      rw [<- ihx2]
+      repeat rw [denote]
+      ac_rfl
     | _ =>
       apply insertOr_is_correct_denote
   | _ =>
