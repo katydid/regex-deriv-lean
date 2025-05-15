@@ -135,10 +135,10 @@ def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
 
 theorem mergeOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (mergeOr x y) := by
-  induction x generalizing y with
+  induction x with
   | or x1 x2 ihx1 ihx2 =>
-    induction y with
-    | or y1 y2 ihy1 ihy2 =>
+    cases y with
+    | or y1 y2 =>
       rw [mergeOr]
       repeat rw [denote]
       rw [<- insertOr_is_correct_denote]
