@@ -16,6 +16,5 @@ import Katydid.Regex.SimpleRegex
 import Katydid.Regex.IndexedRegex
 import Katydid.Regex.SmartRegex
 import Katydid.Regex.SmartRegexOr
-import Katydid.Regex.SmartRegexOrList
 
 import Katydid.Expr.Desc
