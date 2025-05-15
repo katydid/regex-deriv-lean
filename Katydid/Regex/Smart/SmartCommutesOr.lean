@@ -60,13 +60,6 @@ def OrIsSmart [Ord α] (x: Regex α) : Prop :=
   (Not (OrContainsStarAny x)) /\
   (Not (OrContainsEmptyset x))
 
-def mkOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  if x = y
-  then x
-  else if x < y
-  then Regex.or x y
-  else Regex.or y x
-
 theorem mkOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (mkOr x y) := by
   unfold mkOr
@@ -78,25 +71,6 @@ theorem mkOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq α] (x y:
     rfl
   · case neg h =>
     apply Language.simp_or_comm
-
--- insertOr inserts y into x, where x might be or expression and y is not.
--- It inserts y into x if y is not a duplicate found in the or expression of x.
--- It inserts y into x into a sorted position in the or expression of x.
--- example:
---   insertOr (Regex.or a c) b = Regex.or a (Regex.or b c)
---   insertOr (Regex.or a c) a = Regex.or a c
---   insertOr a b = Regex.or a b
---   insertOr a a = a
-def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  match x with
-  | Regex.or x1 x2 =>
-    if x1 = y
-    then x
-    else if x1 < y
-    then Regex.or x (insertOr x2 y)
-    else Regex.or x1 (Regex.or y x2)
-  | _ =>
-    mkOr x y
 
 theorem Regex.simp_or_comm {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (Regex.or y x) := by
@@ -124,15 +98,6 @@ theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Re
   | _ =>
     apply mkOr_is_correct_denote
 
-def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  match x with
-  | Regex.or x1 x2 =>
-    match y with
-    | Regex.or _ _ =>
-      insertOr (mergeOr x2 y) x1
-    | _ => insertOr x y
-  | _ => insertOr y x
-
 theorem mergeOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (mergeOr x y) := by
   induction x with
@@ -157,27 +122,6 @@ theorem mergeOr_is_correct_sorted_no_dup
   {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSortedNoDup x) (hy: OrIsSortedNoDup y):
   OrIsSortedNoDup (mergeOr x y) := by
   sorry
-
-def smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  match x with
-  | Regex.emptyset => y
-  | Regex.star Regex.any => Regex.star Regex.any
-  | Regex.or _ _ =>
-    match y with
-    | Regex.emptyset => x
-    | Regex.star Regex.any => Regex.star Regex.any
-    | Regex.or _ _ =>
-      mergeOr x y
-    | _ =>
-      insertOr x y
-  | x' =>
-    match y with
-    | Regex.emptyset => x'
-    | Regex.star Regex.any => Regex.star Regex.any
-    | Regex.or y1 y2 =>
-      insertOr (Regex.or y1 y2) x'
-    | y' =>
-      Regex.or x' y'
 
 example {α: Type} [Ord α] [DecidableEq α]: (h: (@Regex.star α Regex.emptyset) = (Regex.star Regex.any)) -> False := by
   intro h

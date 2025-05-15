@@ -161,6 +161,10 @@ lemma derive_commutes_pred [Ord α] [DecidableEq α] {p: Predicate.Pred α} {x: 
     intro _ h'
     contradiction
 
+theorem smartOr_is_or {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
+  denote (Regex.or x y) = denote (smartOr x y) := by
+  apply smartOr_is_correct_denote
+
 lemma derive_commutes_or [Ord α] [DecidableEq α] {r1 r2: Regex α} {x: α}
   (ih1: denote (derive r1 x) = Language.derive (denote r1) x)
   (ih2: denote (derive r2 x) = Language.derive (denote r2) x):
@@ -168,7 +172,7 @@ lemma derive_commutes_or [Ord α] [DecidableEq α] {r1 r2: Regex α} {x: α}
   funext xs
   simp only [derive, Language.derive, Language.derives, denote, Language.or, singleton_append,
     eq_iff_iff]
-  -- TODO: rw [←smartOr_is_or, denote, Language.or]
+  rw [←smartOr_is_or, denote, Language.or]
   rw [ih1, ih2]
   rfl
 
@@ -178,8 +182,7 @@ lemma derive_commutes_concat [Ord α] [DecidableEq α] {r1 r2: Regex α} {x: α}
   denote (derive (r1.concat r2) x) = Language.derive (denote (r1.concat r2)) x := by
   funext xs
   simp [derive, denote]
-  -- TODO: rw [←smartOr_is_or, denote, Language.or]
-  -- rw [←smartOr_is_or, denote, Language.or]
+  rw [←smartOr_is_or, denote, Language.or]
   rw [←smartConcat_is_concat]
   simp only [denote, Language.concat, exists_and_left]
   apply Iff.intro

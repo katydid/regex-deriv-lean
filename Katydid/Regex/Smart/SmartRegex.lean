@@ -92,6 +92,62 @@ def smartConcat (x y: Regex α): Regex α :=
       | Regex.emptystr => x
       | _otherwise => Regex.concat x y
 
+def mkOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
+  if x = y
+  then x
+  else if x < y
+  then Regex.or x y
+  else Regex.or y x
+
+-- insertOr inserts y into x, where x might be or expression and y is not.
+-- It inserts y into x if y is not a duplicate found in the or expression of x.
+-- It inserts y into x into a sorted position in the or expression of x.
+-- example:
+--   insertOr (Regex.or a c) b = Regex.or a (Regex.or b c)
+--   insertOr (Regex.or a c) a = Regex.or a c
+--   insertOr a b = Regex.or a b
+--   insertOr a a = a
+def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
+  match x with
+  | Regex.or x1 x2 =>
+    if x1 = y
+    then x
+    else if x1 < y
+    then Regex.or x (insertOr x2 y)
+    else Regex.or x1 (Regex.or y x2)
+  | _ =>
+    mkOr x y
+
+def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
+  match x with
+  | Regex.or x1 x2 =>
+    match y with
+    | Regex.or _ _ =>
+      insertOr (mergeOr x2 y) x1
+    | _ => insertOr x y
+  | _ => insertOr y x
+
+def smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
+  match x with
+  | Regex.emptyset => y
+  | Regex.star Regex.any => Regex.star Regex.any
+  | Regex.or _ _ =>
+    match y with
+    | Regex.emptyset => x
+    | Regex.star Regex.any => Regex.star Regex.any
+    | Regex.or _ _ =>
+      mergeOr x y
+    | _ =>
+      insertOr x y
+  | x' =>
+    match y with
+    | Regex.emptyset => x'
+    | Regex.star Regex.any => Regex.star Regex.any
+    | Regex.or y1 y2 =>
+      insertOr (Regex.or y1 y2) x'
+    | y' =>
+      Regex.or x' y'
+
 def derive [Ord α] [DecidableEq α] (r: Regex α) (a: α): Regex α :=
   match r with
   | Regex.emptyset => Regex.emptyset
@@ -99,11 +155,9 @@ def derive [Ord α] [DecidableEq α] (r: Regex α) (a: α): Regex α :=
   | Regex.any => Regex.emptystr
   | Regex.pred p => onlyif' (p.decidableEval a) Regex.emptystr
   | Regex.or x y =>
-      -- TODO: SmartRegex.smartOr (derive x a) (derive y a)
-      Regex.or (derive x a) (derive y a)
+      SmartRegex.smartOr (derive x a) (derive y a)
   | Regex.concat x y =>
-      -- TOOD: SmartRegex.smartOr
-      Regex.or
+      SmartRegex.smartOr
         (SmartRegex.smartConcat (derive x a) y)
         (onlyif (null x) (derive y a))
   | Regex.star x =>
