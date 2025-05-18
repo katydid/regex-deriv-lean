@@ -95,6 +95,14 @@ def smartConcat (x y: Regex α): Regex α :=
 def mkOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   if x = y
   then x
+  else if x = Regex.emptyset
+  then y
+  else if x = Regex.star Regex.any
+  then x
+  else if y = Regex.emptyset
+  then x
+  else if y = Regex.star Regex.any
+  then y
   else if x < y
   then Regex.or x y
   else Regex.or y x

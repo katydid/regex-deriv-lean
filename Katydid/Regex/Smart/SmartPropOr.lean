@@ -108,7 +108,7 @@ inductive OrList3: Regex α -> Prop where
     -> Regex.notOr x
     -> Regex.notOr y
     -> OrList3 xy
-  | cons (x y y1 y2: Regex α):
+  | cons (xy x y y1 y2: Regex α):
     xy = Regex.or x y
     -> y = Regex.or y1 y2
     -> Regex.notOr x
@@ -155,7 +155,7 @@ theorem orlist_is_OrList3 (xy: Regex α):
         intro hxy
         intro hy
         rw [hxy]
-        apply OrList3.cons x (Regex.or y1 y2) y1 y2 rfl rfl hx
+        apply OrList3.cons _ x (Regex.or y1 y2) y1 y2 rfl rfl hx
         exact ih
   case mpr =>
     intro h
@@ -166,115 +166,112 @@ theorem orlist_is_OrList3 (xy: Regex α):
     | lastcons xy x y hxy hx hy =>
       apply OrList.bin xy x y hxy hx
       apply OrList.base y hy
-    | cons x y y1 y2 hxy hy1y2 hx hy ihy =>
+    | cons _ x y y1 y2 hxy hy1y2 hx hy ihy =>
       rename_i xy'
       apply OrList.bin xy' x y hxy hx ihy
 
-inductive SimpOrStarAny: Regex α -> Prop where
-  | base (x: Regex α):
-    Regex.notOr x
-    -> SimpOrStarAny x
-  | base_or (x y: Regex α):
+-- The or is balanced to the right as a list
+-- (or a (or b (or c d)))
+-- The or list is also sorted and does not contain duplicates.
+inductive OrSortedList3 [LT (Regex α)]: Regex α -> Prop where
+  | singleton (x: Regex α):
+    Regex.notOr x -- or list only element
+    -> OrSortedList3 x
+  | lastcons (xy x y: Regex α):
     xy = Regex.or x y
-    /\ Regex.notOr y
-    /\ x ≠ (Regex.star Regex.any)
-    /\ y ≠ (Regex.star Regex.any)
-    -> SimpOrStarAny xy
-  | nested (x y1 y2: Regex α):
-    y = Regex.or y1 y2
-    /\ xy = Regex.or x y
-    /\ x ≠ (Regex.star Regex.any)
-    -> SimpOrStarAny y
-    -> SimpOrStarAny xy
+    -> x < y -- sorted
+    -> Regex.notOr x -- or list second last element
+    -> Regex.notOr y -- or list last element
+    -> OrSortedList3 xy
+  | cons (xy x y y1 y2: Regex α):
+    xy = Regex.or x y
+    -> y = Regex.or y1 y2
+    -> x < y1 -- sorted
+    -> Regex.notOr x -- or list element
+    -> OrSortedList3 y -- sorted or list of at least two elements
+    -> OrSortedList3 xy
 
-theorem mkOr_preserves_no_star_any {α: Type} [Ord α] [DecidableEq α] (x y: Regex α)
-  (smartx: SimpOrStarAny x) (smarty: SimpOrStarAny y):
-  SimpOrStarAny (mkOr x y) := by
+theorem orSortedList3_implies_OrList3 [LT (Regex α)] (xy: Regex α):
+  OrSortedList3 xy -> OrList3 xy := by
+  intro h
+  induction h with
+  | singleton x h =>
+    apply OrList3.singleton x h
+  | lastcons xy x y hxy ltxy hx hy =>
+    apply OrList3.lastcons xy x y hxy hx hy
+  | cons xy x y y1 y2 hxy hy ltxy1 hx hoy ihy =>
+    apply OrList3.cons xy x y y1 y2 hxy hy hx ihy
+
+def Regex.orElem' (x: Regex α): Prop :=
+  x ≠ Regex.emptyset
+  /\ x ≠ Regex.star Regex.any
+  /\ Regex.notOr x
+
+-- An or element does not include an `or`, `emptyset` or `star any`.
+def Regex.orElem (x: Regex α) : Prop :=
+  (x = Regex.emptystr)
+  \/ (x = Regex.any)
+  \/ (∃ p: Predicate.Pred α, x = Regex.pred p)
+  \/ (∃ x1 x2, x = Regex.concat x1 x2)
+  \/ (∃ x1, x = Regex.star x1 /\ x1 ≠ Regex.any)
+
+theorem orElem'_is_orElem (x: Regex α):
+  Regex.orElem x <-> Regex.orElem' x := by
+  sorry
+
+-- The or is balanced to the right as a list
+-- (or a (or b (or c d)))
+-- The or list is also sorted and does not contain duplicates.
+inductive OrIsSmart [LT (Regex α)]: Regex α -> Prop where
+  | singleton (x: Regex α):
+    Regex.notOr x -- or list only element
+    -> OrIsSmart x
+  | lastcons (xy x y: Regex α):
+    xy = Regex.or x y
+    -> x < y -- sorted
+    -> Regex.orElem x -- or list second last element
+    -> Regex.orElem y -- or list last element
+    -> OrIsSmart xy
+  | cons (xy x y y1 y2: Regex α):
+    xy = Regex.or x y
+    -> y = Regex.or y1 y2
+    -> x < y1 -- sorted
+    -> Regex.orElem x -- or list element
+    -> OrIsSmart y -- sorted or list of at least two elements
+    -> OrIsSmart xy
+
+theorem mkOr_preserves_smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α)
+  (smartx: OrIsSmart x) (notorx: Regex.notOr x) (smarty: OrIsSmart y) (notory: Regex.notOr y):
+  OrIsSmart (mkOr x y) := by
   unfold mkOr
   split_ifs
   case pos h =>
     exact smartx
   case pos h =>
     sorry
+  case pos h =>
+    sorry
+  case pos h =>
+    sorry
+  case pos h =>
+    sorry
+  case pos h =>
+    apply OrIsSmart.lastcons (Regex.or x y) x y rfl h
+    rw [orElem'_is_orElem]
+    unfold Regex.orElem'
+    split_ands <;> assumption
+    rw [orElem'_is_orElem]
+    unfold Regex.orElem'
+    split_ands <;> assumption
   case neg h =>
     sorry
 
-
-theorem smartOr_removes_star_any {α: Type} [Ord α] [DecidableEq α] (x y: Regex α)
-  (smartx: SimpOrStarAny x) (smarty: SimpOrStarAny y):
-  SimpOrStarAny (smartOr x y) := by
-  induction x with
-  | emptyset =>
-    rw [smartOr]
-    exact smarty
-  | emptystr =>
-    cases y with
-    | emptyset =>
-      simp only [smartOr]
-      exact smartx
-    | emptystr =>
-      simp only [smartOr]
-      unfold mkOr
-      simp only [↓reduceIte]
-      exact smartx
-    | any =>
-      simp only [smartOr]
-      unfold mkOr
-      simp
-      sorry
-    | _ =>
-      sorry
-  | _ =>
-    sorry
-
-def OrIsSortedNoDup [Ord α] (x: Regex α) : Prop :=
-  match x with
-  | Regex.or (Regex.or _ _) _ =>
-    False
-  | Regex.or x1 (Regex.or x21 x22) =>
-    Ord.compare x1 x21 = Ordering.lt /\ OrIsSortedNoDup (Regex.or x21 x22)
-  | Regex.or x1 x2 =>
-    Ord.compare x1 x2 = Ordering.lt
-  | _ => True
-
-def OrContainsStarAny (x: Regex α) : Prop :=
-  match x with
-  | Regex.or (Regex.star Regex.any) _ =>
-    True
-  | Regex.or _ (Regex.star Regex.any) =>
-    True
-  | Regex.or _ x2 =>
-    OrContainsStarAny x2
-  | _ =>
-    False
-
-inductive OrContainsStarAny': Regex α -> Prop where
-  | orLeft (x: Regex α): OrContainsStarAny' (Regex.or (Regex.star Regex.any) x)
-  | orRight (x: Regex α): OrContainsStarAny' (Regex.or x (Regex.star Regex.any))
-  | orNested (x y: Regex α): OrContainsStarAny' y -> OrContainsStarAny' (Regex.or x y)
-
-def OrContainsEmptyset (x: Regex α) : Prop :=
-  match x with
-  | Regex.or Regex.emptyset _ =>
-    True
-  | Regex.or _ Regex.emptyset =>
-    True
-  | Regex.or _ x2 =>
-    OrContainsEmptyset x2
-  | _ =>
-    False
-
-def OrIsSmart [Ord α] (x: Regex α) : Prop :=
-  (OrIsSortedNoDup x) /\
-  (Not (OrContainsStarAny x)) /\
-  (Not (OrContainsEmptyset x))
-
 theorem mergeOr_is_correct_sorted_no_dup
-  {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSortedNoDup x) (hy: OrIsSortedNoDup y):
-  OrIsSortedNoDup (mergeOr x y) := by
+  {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: OrIsSmart y):
+  OrIsSmart (mergeOr x y) := by
   sorry
 
 theorem smartOr_is_correct_sorted_no_dup
-  {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSortedNoDup x) (hy: OrIsSortedNoDup y):
-  OrIsSortedNoDup (smartOr x y) := by
+  {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: OrIsSmart y):
+  OrIsSmart (smartOr x y) := by
   sorry

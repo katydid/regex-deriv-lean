@@ -14,6 +14,18 @@ theorem mkOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq α] (x y:
     rw [h]
     apply Language.simp_or_idemp
   · case pos h =>
+    rw [h]
+    apply Language.simp_or_emptyset_l_is_r
+  · case pos h =>
+    rw [h]
+    apply Language.simp_or_star_any_l_is_star_any
+  · case pos h =>
+    rw [h]
+    apply Language.simp_or_emptyset_r_is_l
+  · case pos h =>
+    rw [h]
+    apply Language.simp_or_star_any_r_is_star_any
+  · case pos h =>
     rfl
   · case neg h =>
     apply Language.simp_or_comm
