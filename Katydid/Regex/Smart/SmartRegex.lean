@@ -146,7 +146,7 @@ def smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
     | Regex.or y1 y2 =>
       insertOr (Regex.or y1 y2) x'
     | y' =>
-      Regex.or x' y'
+      mkOr x' y'
 
 def derive [Ord α] [DecidableEq α] (r: Regex α) (a: α): Regex α :=
   match r with

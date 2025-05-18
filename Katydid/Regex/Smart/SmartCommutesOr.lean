@@ -86,7 +86,7 @@ theorem smartOr_is_correct_denote_star_l {α: Type} [Ord α] [DecidableEq α] (x
       rw [<- insertOr_is_correct_denote]
       simp only [denote]
       ac_rfl
-    · rfl
+    · rw [mkOr_is_correct_denote]
 
 theorem smartOr_is_correct_denote_star_r {α: Type} [Ord α] [DecidableEq α] (x y1: Regex α):
   denote (Regex.or x (Regex.star y1)) = denote (smartOr x (Regex.star y1)) := by
@@ -106,7 +106,7 @@ theorem smartOr_is_correct_denote_star_r {α: Type} [Ord α] [DecidableEq α] (x
       apply Language.simp_or_star_any_l_is_star_any
     · rename_i y1 y2
       rw [<- insertOr_is_correct_denote]
-    · rfl
+    · rw [mkOr_is_correct_denote]
 
 theorem smartOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (smartOr x y) := by
@@ -148,4 +148,4 @@ theorem smartOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Reg
       simp only [denote]
       ac_rfl
     | _ =>
-      rw [smartOr] <;> simp only [reduceCtorEq, imp_self, implies_true]
+      rw [smartOr] <;> simp only [mkOr, reduceCtorEq, imp_self, implies_true, mkOr_is_correct_denote]
