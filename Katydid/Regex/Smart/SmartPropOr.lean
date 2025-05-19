@@ -217,7 +217,101 @@ def Regex.orElem (x: Regex α) : Prop :=
 
 theorem orElem'_is_orElem (x: Regex α):
   Regex.orElem x <-> Regex.orElem' x := by
-  sorry
+  apply Iff.intro
+  case mp =>
+    intro h
+    unfold Regex.orElem at h
+    unfold Regex.orElem'
+    cases h
+    case inl hemptystr =>
+      rw [hemptystr]
+      simp
+      apply Regex.notOr_emptystr
+    case inr h =>
+    cases h
+    case inl hany =>
+      rw [hany]
+      simp
+      apply Regex.notOr_any
+    case inr h =>
+    cases h
+    case inl hpred =>
+      cases hpred
+      case intro p hpred =>
+      rw [hpred]
+      simp
+      apply Regex.notOr_pred
+    case inr h =>
+    cases h
+    case inl hconcat =>
+      cases hconcat
+      case intro x1 hconcat =>
+      cases hconcat
+      case intro x2 hconcat =>
+      rw [hconcat]
+      simp
+      apply Regex.notOr_concat
+    case inr hstar =>
+      cases hstar
+      case intro x1 hstar =>
+      cases hstar
+      case intro hstar hany =>
+      rw [hstar]
+      simp
+      split_ands
+      exact hany
+      apply Regex.notOr_star
+  case mpr =>
+    intro h
+    unfold Regex.orElem' at h
+    unfold Regex.orElem
+    cases h
+    case intro hnemptyset h =>
+    cases h
+    case intro hnstarany h =>
+    cases h
+    case inl hemptyset =>
+      contradiction
+    case inr h =>
+    cases h
+    case inl hemptystr =>
+      apply Or.inl
+      assumption
+    case inr h =>
+    cases h
+    case inl hany =>
+      apply Or.inr
+      apply Or.inl
+      assumption
+    case inr h =>
+    cases h
+    case inl hpred =>
+      apply Or.inr
+      apply Or.inr
+      apply Or.inl
+      assumption
+    case inr h =>
+    cases h
+    case inl hconcat =>
+      apply Or.inr
+      apply Or.inr
+      apply Or.inr
+      apply Or.inl
+      assumption
+    case inr hstar =>
+      apply Or.inr
+      apply Or.inr
+      apply Or.inr
+      apply Or.inr
+      cases hstar
+      case intro x1 hstar =>
+        exists x1
+        apply And.intro
+        exact hstar
+        intro hany
+        apply hnstarany
+        rw [hstar]
+        congr
 
 -- The or is balanced to the right as a list
 -- (or a (or b (or c d)))
@@ -240,6 +334,21 @@ inductive OrIsSmart [LT (Regex α)]: Regex α -> Prop where
     -> OrIsSmart y -- sorted or list of at least two elements
     -> OrIsSmart xy
 
+-- TODO: Wait for Std.LawfulEqOrd to land, see
+-- https://leanprover.zulipchat.com/#narrow/channel/217875-Is-there-code-for-X.3F/topic/.E2.9C.94.20Ordering.2Eeq.20is.20equivalent.20to.20LawfulEq/with/519113072
+theorem neq_is_lt_or_gt [o: Ord α] [d: DecidableEq α] {x y: α}
+  (neq: x ≠ y): (x < y) \/ (x > y) := by
+  sorry
+
+theorem not_less_than_is_greater_than [o: Ord α] [DecidableEq α] {x y: α}
+  (neq: x ≠ y) (nlt: Not (x < y)): x > y := by
+  have h := neq_is_lt_or_gt neq
+  cases h
+  case inl h =>
+    contradiction
+  case inr h =>
+    exact h
+
 theorem mkOr_preserves_smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α)
   (smartx: OrIsSmart x) (notorx: Regex.notOr x) (smarty: OrIsSmart y) (notory: Regex.notOr y):
   OrIsSmart (mkOr x y) := by
@@ -248,30 +357,43 @@ theorem mkOr_preserves_smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex 
   case pos h =>
     exact smartx
   case pos h =>
-    sorry
+    exact smarty
   case pos h =>
-    sorry
+    exact smartx
   case pos h =>
-    sorry
+    exact smartx
   case pos h =>
-    sorry
+    exact smarty
   case pos h =>
     apply OrIsSmart.lastcons (Regex.or x y) x y rfl h
-    rw [orElem'_is_orElem]
-    unfold Regex.orElem'
-    split_ands <;> assumption
-    rw [orElem'_is_orElem]
-    unfold Regex.orElem'
-    split_ands <;> assumption
+    · rw [orElem'_is_orElem]
+      unfold Regex.orElem'
+      split_ands <;> assumption
+    · rw [orElem'_is_orElem]
+      unfold Regex.orElem'
+      split_ands <;> assumption
   case neg h =>
-    sorry
+    rename_i hneq hxemptyset hxanystar hyemptyset hyanystar
+    apply OrIsSmart.lastcons (Regex.or y x) y x rfl
+    · apply not_less_than_is_greater_than hneq h
+    · rw [orElem'_is_orElem]
+      unfold Regex.orElem'
+      split_ands <;> assumption
+    · rw [orElem'_is_orElem]
+      unfold Regex.orElem'
+      split_ands <;> assumption
 
-theorem mergeOr_is_correct_sorted_no_dup
+theorem insertOr_preserves_smartOr
+  {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: Regex.notOr y):
+  OrIsSmart (insertOr x y) := by
+  sorry
+
+theorem mergeOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: OrIsSmart y):
   OrIsSmart (mergeOr x y) := by
   sorry
 
-theorem smartOr_is_correct_sorted_no_dup
+theorem smartOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: OrIsSmart y):
   OrIsSmart (smartOr x y) := by
   sorry
