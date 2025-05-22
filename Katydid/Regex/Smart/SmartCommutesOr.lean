@@ -47,16 +47,10 @@ theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Re
       ac_rfl
     · case pos h =>
       simp only [denote]
-      rw [<- mkOr_is_correct_denote]
-      simp only [denote]
       rw [<- ih2]
       simp only [denote]
       ac_rfl
     · case neg h =>
-      simp only [denote]
-      rw [<- mkOr_is_correct_denote]
-      simp only [denote]
-      rw [<- mkOr_is_correct_denote]
       simp only [denote]
       ac_rfl
   | _ =>

@@ -17,6 +17,53 @@ def Regex.notOr (x: Regex α) : Prop :=
   \/ (∃ x1 x2, x = Regex.concat x1 x2)
   \/ (∃ x1, x = Regex.star x1)
 
+-- check that Regex.notOr does an exhaustive match of all possible patterns, except for Regex.or.
+theorem Regex.notOr_is_exhaustive (x: Regex α):
+  Regex.notOr x = Not (Regex.isOr x) := by
+  unfold notOr
+  unfold isOr
+  cases x <;> simp
+
+inductive NotOr: Regex α -> Prop where
+  | emptyset: NotOr Regex.emptyset
+  | emptystr: NotOr Regex.emptystr
+  | any: NotOr Regex.any
+  | pred (p: Predicate.Pred α): NotOr (Regex.pred p)
+  | concat (x1 x2: Regex α): NotOr (Regex.concat x1 x2)
+  | star (x1: Regex α): NotOr (Regex.star x1)
+
+theorem Regex.NotOr_is_NotisOr (x: Regex α):
+  NotOr x = Not (Regex.isOr x) := by
+  unfold isOr
+  cases x with
+  | emptyset =>
+    simp
+    apply NotOr.emptyset
+  | emptystr =>
+    simp
+    apply NotOr.emptystr
+  | any =>
+    simp
+    apply NotOr.any
+  | pred p =>
+    simp
+    apply NotOr.pred
+  | or x1 x2 =>
+    simp
+    intro h
+    nomatch h
+  | concat x1 x2 =>
+    simp
+    apply NotOr.concat
+  | star x1 =>
+    simp
+    apply NotOr.star
+
+theorem Regex.NotOr_is_notOr (x: Regex α):
+  NotOr x = Regex.notOr x := by
+  rw [Regex.notOr_is_exhaustive ]
+  rw [Regex.NotOr_is_NotisOr]
+
 theorem Regex.notOr_or {α: Type u} {x y: Regex α}:
   Regex.notOr (Regex.or x y) -> False := by
   intro h
@@ -77,13 +124,6 @@ theorem Regex.notOr_star {α: Type u} {x: Regex α}:
   Regex.notOr (Regex.star x) := by
   unfold notOr
   simp
-
--- check that Regex.notOr does an exhaustive match of all possible patterns, except for Regex.or.
-theorem Regex.notOr_is_exhaustive (x: Regex α):
-  Regex.notOr x = Not (Regex.isOr x) := by
-  unfold notOr
-  unfold isOr
-  cases x <;> simp
 
 -- The or is balanced to the right as a list
 -- (or a (or b (or c d)))
@@ -215,6 +255,81 @@ def Regex.orElem (x: Regex α) : Prop :=
   \/ (∃ x1 x2, x = Regex.concat x1 x2)
   \/ (∃ x1, x = Regex.star x1 /\ x1 ≠ Regex.any)
 
+inductive OrElem: Regex α -> Prop where
+  | emptystr: OrElem Regex.emptystr
+  | any: OrElem Regex.any
+  | pred (p: Predicate.Pred α): OrElem (Regex.pred p)
+  | concat (x1 x2: Regex α): OrElem (Regex.concat x1 x2)
+  | star (x1: Regex α) (x1nstar: x1 ≠ Regex.any): OrElem (Regex.star x1)
+
+theorem OrElem_is_orElem (x: Regex α):
+  Regex.orElem x <-> OrElem x := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    cases h
+    case inl h =>
+      rw [h]
+      apply OrElem.emptystr
+    case inr h =>
+    cases h
+    case inl h =>
+      rw [h]
+      apply OrElem.any
+    case inr h =>
+    cases h
+    case inl h =>
+      cases h
+      case intro p h =>
+      rw [h]
+      apply OrElem.pred
+    case inr h =>
+    cases h
+    case inl h =>
+      cases h
+      case intro x1 h =>
+      cases h
+      case intro x2 h =>
+      rw [h]
+      apply OrElem.concat
+    case inr h =>
+      cases h
+      case intro x1 h =>
+      cases h
+      case intro x1star x1any =>
+      rw [x1star]
+      apply OrElem.star
+      exact x1any
+  case mpr =>
+    intro h
+    unfold Regex.orElem
+    cases h with
+    | emptystr =>
+      apply Or.inl
+      rfl
+    | any =>
+      apply Or.inr
+      apply Or.inl
+      rfl
+    | pred p =>
+      apply Or.inr
+      apply Or.inr
+      apply Or.inl
+      exists p
+    | concat x1 x2 =>
+      apply Or.inr
+      apply Or.inr
+      apply Or.inr
+      apply Or.inl
+      exists x1
+      exists x2
+    | star x1 =>
+      apply Or.inr
+      apply Or.inr
+      apply Or.inr
+      apply Or.inr
+      exists x1
+
 theorem orElem'_is_orElem (x: Regex α):
   Regex.orElem x <-> Regex.orElem' x := by
   apply Iff.intro
@@ -334,6 +449,30 @@ inductive OrIsSmart [LT (Regex α)]: Regex α -> Prop where
     -> OrIsSmart y -- sorted or list of at least two elements
     -> OrIsSmart xy
 
+theorem IsOrSmart_emptyset [Ord α]:
+  OrIsSmart (@Regex.emptyset α) :=
+  OrIsSmart.singleton Regex.emptyset Regex.notOr_emptyset
+
+theorem IsOrSmart_emptystr [Ord α]:
+  OrIsSmart (@Regex.emptystr α) :=
+  OrIsSmart.singleton Regex.emptystr Regex.notOr_emptystr
+
+theorem IsOrSmart_any [Ord α]:
+  OrIsSmart (@Regex.any α) :=
+  OrIsSmart.singleton Regex.any Regex.notOr_any
+
+theorem IsOrSmart_pred [Ord α] (p: Predicate.Pred α):
+  OrIsSmart (Regex.pred p) :=
+  OrIsSmart.singleton (Regex.pred p) Regex.notOr_pred
+
+theorem IsOrSmart_concat [Ord α] (x1 x2: Regex α):
+  OrIsSmart (Regex.concat x1 x2) :=
+  OrIsSmart.singleton (Regex.concat x1 x2) Regex.notOr_concat
+
+theorem IsOrSmart_star [Ord α] (x1: Regex α):
+  OrIsSmart (Regex.star x1) :=
+  OrIsSmart.singleton (Regex.star x1) Regex.notOr_star
+
 -- TODO: Wait for Std.LawfulEqOrd to land, see
 -- https://leanprover.zulipchat.com/#narrow/channel/217875-Is-there-code-for-X.3F/topic/.E2.9C.94.20Ordering.2Eeq.20is.20equivalent.20to.20LawfulEq/with/519113072
 theorem neq_is_lt_or_gt [o: Ord α] [d: DecidableEq α] {x y: α}
@@ -386,7 +525,66 @@ theorem mkOr_preserves_smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex 
 theorem insertOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: Regex.notOr y):
   OrIsSmart (insertOr x y) := by
-  sorry
+  induction hx with
+  | singleton x h =>
+    unfold insertOr
+    rw [<- Regex.NotOr_is_notOr] at h
+    cases h with
+    | emptyset =>
+      simp only
+      apply mkOr_preserves_smartOr
+      · exact IsOrSmart_emptyset
+      · exact Regex.notOr_emptyset
+      · exact OrIsSmart.singleton y hy
+      · exact hy
+    | emptystr =>
+      simp only
+      apply mkOr_preserves_smartOr
+      · exact IsOrSmart_emptystr
+      · exact Regex.notOr_emptystr
+      · exact OrIsSmart.singleton y hy
+      · exact hy
+    | any =>
+      simp only
+      apply mkOr_preserves_smartOr
+      · exact IsOrSmart_any
+      · exact Regex.notOr_any
+      · exact OrIsSmart.singleton y hy
+      · exact hy
+    | pred p =>
+      simp only
+      apply mkOr_preserves_smartOr
+      · exact IsOrSmart_pred p
+      · exact Regex.notOr_pred
+      · exact OrIsSmart.singleton y hy
+      · exact hy
+    | concat x1 x2 =>
+      simp only
+      apply mkOr_preserves_smartOr
+      · exact IsOrSmart_concat x1 x2
+      · exact Regex.notOr_concat
+      · exact OrIsSmart.singleton y hy
+      · exact hy
+    | star x1 =>
+      simp only
+      apply mkOr_preserves_smartOr
+      · exact IsOrSmart_star x1
+      · exact Regex.notOr_star
+      · exact OrIsSmart.singleton y hy
+      · exact hy
+  | lastcons x1x2 x1 x2 hx1x2 ltx1x2 hx1 hx2 =>
+    rw [hx1x2]
+    unfold insertOr
+    split_ifs
+    case pos h =>
+      exact OrIsSmart.lastcons (Regex.or x1 x2) x1 x2 rfl ltx1x2 hx1 hx2
+    case pos h =>
+      sorry
+    case neg h =>
+      sorry
+  | cons h =>
+    sorry
+
 
 theorem mergeOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: OrIsSmart y):

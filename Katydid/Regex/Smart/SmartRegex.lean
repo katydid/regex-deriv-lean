@@ -121,8 +121,8 @@ def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
     if x1 = y
     then x
     else if x1 < y
-    then mkOr x (insertOr x2 y)
-    else mkOr x1 (mkOr y x2)
+    then Regex.or x1 (insertOr x2 y)
+    else Regex.or x1 (Regex.or y x2)
   | _ =>
     mkOr x y
 
