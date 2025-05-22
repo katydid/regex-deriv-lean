@@ -3,7 +3,7 @@ import Katydid.Std.Linter.DetectClassical
 import Katydid.Std.Ordering
 
 import Katydid.Regex.Smart.SmartRegex
-import Katydid.Regex.Smart.SmartPropOrElem
+import Katydid.Regex.Smart.SmartOrElem
 
 open SmartRegex
 

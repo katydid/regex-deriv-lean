@@ -17,7 +17,7 @@ import Katydid.Regex.IndexedRegex
 import Katydid.Regex.Smart.SmartRegex
 import Katydid.Regex.Smart.SmartCommutesOr
 import Katydid.Regex.Smart.SmartCommutes
-import Katydid.Regex.Smart.SmartPropOrElem
-import Katydid.Regex.Smart.SmartPropOr
+import Katydid.Regex.Smart.SmartOrElem
+import Katydid.Regex.Smart.SmartOr
 
 import Katydid.Expr.Desc
