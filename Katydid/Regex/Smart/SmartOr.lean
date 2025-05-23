@@ -133,12 +133,29 @@ theorem insertOr_preserves_smartOr
 theorem mergeOr_preserves_smartOr_for_notor_left
   {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: Regex.NotOr x) (hy: OrIsSmart y):
   OrIsSmart (mergeOr x y) := by
-  sorry
+  unfold mergeOr
+  split
+  next _ y1 y2 =>
+    split
+    next _ x1 x2 =>
+      contradiction
+    next _ h =>
+      apply insertOr_preserves_smartOr hx hy
+  next _ h =>
+    have h := Regex.NotOr.split.otherwise h
+    apply insertOr_preserves_smartOr h
+    apply OrIsSmart.singleton
+    exact hx
 
 theorem mergeOr_preserves_smartOr_for_notor_right
   {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: Regex.NotOr y) (hy: OrIsSmart x):
   OrIsSmart (mergeOr x y) := by
-  sorry
+  unfold mergeOr
+  split
+  next _ y1 y2 =>
+    contradiction
+  next _ h =>
+    apply insertOr_preserves_smartOr hx hy
 
 theorem mergeOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: OrIsSmart x) (hy: OrIsSmart y):
