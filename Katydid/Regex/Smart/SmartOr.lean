@@ -130,22 +130,64 @@ theorem insertOr_preserves_smartOr
   | cons h =>
     sorry
 
+theorem mergeOr_preserves_smartOr_for_notor_left
+  {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: Regex.NotOr x) (hy: OrIsSmart y):
+  OrIsSmart (mergeOr x y) := by
+  sorry
+
+theorem mergeOr_preserves_smartOr_for_notor_right
+  {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: Regex.NotOr y) (hy: OrIsSmart x):
+  OrIsSmart (mergeOr x y) := by
+  sorry
+
 theorem mergeOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: OrIsSmart x) (hy: OrIsSmart y):
   OrIsSmart (mergeOr x y) := by
-  unfold mergeOr
-  split
-  next _ y1 y2 =>
+  induction hy with
+  | singleton y hy =>
+    unfold mergeOr
+    split
+    next _ y1 y2 =>
+      contradiction
+    next _ h =>
+      apply insertOr_preserves_smartOr
+      · exact Regex.NotOr.split.otherwise h
+      · exact hx
+  | lastcons y1y2 y1 y2 hy1y2 lty1y2 hy1 hy2 =>
+    unfold mergeOr
+    rw [hy1y2]
+    simp only
     split
     next _ x1 x2 =>
-      sorry
+      have hy1' := SmartOrElem_implies_NotOr hy1
+      have hy2' := SmartOrElem_implies_NotOr hy2
+      apply insertOr_preserves_smartOr hy1'
+      apply mergeOr_preserves_smartOr_for_notor_right hy2'
+      exact hx
     next _ h =>
-      apply insertOr_preserves_smartOr ?_ hy
-      apply Regex.NotOr.split.otherwise h
-  next _ h =>
-    apply insertOr_preserves_smartOr ?_ hx
-    apply Regex.NotOr.split.otherwise h
-
+      have h := Regex.NotOr.split.otherwise h
+      apply insertOr_preserves_smartOr h
+      apply OrIsSmart.lastcons (Regex.or y1 y2) y1 y2 rfl lty1y2 hy1 hy2
+  | cons y y1 y2 y21 y22 hy1y2 hy21y22 hlt hy1 hy2 ih =>
+    have hny1 := SmartOrElem_implies_NotOr hy1
+    unfold mergeOr
+    split
+    next _ y1 y2 =>
+      split
+      next _ x1 x2 =>
+        cases hy1y2
+        subst_vars
+        apply insertOr_preserves_smartOr hny1 ih
+      next _ h =>
+        cases hy1y2
+        subst_vars
+        apply insertOr_preserves_smartOr
+        · apply Regex.NotOr.split.otherwise h
+        · apply OrIsSmart.cons (Regex.or y1 (Regex.or y21 y22)) y1 (Regex.or y21 y22) y21 y22 rfl rfl hlt hy1 hy2
+    next _ h hn =>
+      apply insertOr_preserves_smartOr
+      · apply Regex.NotOr.split.otherwise hn
+      · exact hx
 
 theorem smartOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: OrIsSmart y):
