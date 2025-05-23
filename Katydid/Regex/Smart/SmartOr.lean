@@ -75,31 +75,31 @@ private lemma insertOr_NotOr_NotOr_OrIsSmart
   (hx: Regex.NotOr x) (hy: Regex.NotOr y):
   OrIsSmart (insertOr x y) := by
   unfold insertOr
-  cases hx with
+  cases hy with
   | emptyset =>
     simp only
-    exact mkOr_makes_smartOr Regex.NotOr.emptyset hy
+    exact mkOr_makes_smartOr hx Regex.NotOr.emptyset
   | emptystr =>
     simp only
-    exact mkOr_makes_smartOr Regex.NotOr.emptystr hy
+    exact mkOr_makes_smartOr hx Regex.NotOr.emptystr
   | any =>
     simp only
-    exact mkOr_makes_smartOr Regex.NotOr.any hy
+    exact mkOr_makes_smartOr hx Regex.NotOr.any
   | pred p =>
     simp only
-    exact mkOr_makes_smartOr (Regex.NotOr.pred p) hy
-  | concat x1 x2 =>
+    exact mkOr_makes_smartOr hx (Regex.NotOr.pred p)
+  | concat y1 y2 =>
     simp only
-    exact mkOr_makes_smartOr (Regex.NotOr.concat x1 x2) hy
-  | star x1 =>
+    exact mkOr_makes_smartOr hx (Regex.NotOr.concat y1 y2)
+  | star y1 =>
     simp only
-    exact mkOr_makes_smartOr (Regex.NotOr.star x1) hy
+    exact mkOr_makes_smartOr hx (Regex.NotOr.star y1)
 
 theorem insertOr_preserves_smartOr
-  {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: OrIsSmart x) (hy: Regex.NotOr y):
+  {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: Regex.NotOr x) (hy: OrIsSmart y):
   OrIsSmart (insertOr x y) := by
-  induction hx with
-  | singleton x hx =>
+  induction hy with
+  | singleton y hy =>
     apply insertOr_NotOr_NotOr_OrIsSmart hx hy
   | lastcons x1x2 x1 x2 hx1x2 ltx1x2 hx1 hx2 =>
     rw [hx1x2]
@@ -111,14 +111,11 @@ theorem insertOr_preserves_smartOr
       rw [insertOr]
       · have hhx1 := SmartOrElem_implies_NotOr hx1
         have hhx2 := SmartOrElem_implies_NotOr hx2
-        have hh := mkOr_makes_smartOr hhx2 hy
+        have hh := mkOr_makes_smartOr hhx2 hx
         cases hh with
         | singleton x2y hx2y =>
-          apply OrIsSmart.lastcons (Regex.or x1 (mkOr x2 y)) x1 (mkOr x2 y)
-          · rfl
-          · sorry -- mkOr preserves OrElem
-          · assumption
-          · sorry
+          -- apply OrIsSmart.lastcons (Regex.or x1 (mkOr x2 y)) x1 (mkOr x2 y)
+          sorry
         | lastcons =>
           sorry
         | cons =>
@@ -138,15 +135,15 @@ theorem mergeOr_preserves_smartOr
   OrIsSmart (mergeOr x y) := by
   unfold mergeOr
   split
-  next _ x1 x2 =>
+  next _ y1 y2 =>
     split
-    next _ y1 y2 =>
+    next _ x1 x2 =>
       sorry
     next _ h =>
-      apply insertOr_preserves_smartOr hx
+      apply insertOr_preserves_smartOr ?_ hy
       apply Regex.NotOr.split.otherwise h
   next _ h =>
-    apply insertOr_preserves_smartOr hy
+    apply insertOr_preserves_smartOr ?_ hx
     apply Regex.NotOr.split.otherwise h
 
 

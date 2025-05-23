@@ -107,33 +107,35 @@ def mkOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   then Regex.or x y
   else Regex.or y x
 
--- insertOr inserts y into x, where x might be or expression and y is not.
--- It inserts y into x if y is not a duplicate found in the or expression of x.
--- It inserts y into x into a sorted position in the or expression of x.
+-- insertOr inserts x into y, where y might be or expression and x is not.
+-- It inserts x into y if x is not a duplicate found in the or expression of y.
+-- It inserts x into y into a sorted position in the or expression of y.
 -- example:
---   insertOr (Regex.or a c) b = Regex.or a (Regex.or b c)
---   insertOr (Regex.or a c) a = Regex.or a c
+--   insertOr b (Regex.or a c) = Regex.or a (Regex.or b c)
+--   insertOr a (Regex.or a c) = Regex.or a c
 --   insertOr a b = Regex.or a b
 --   insertOr a a = a
 def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  match x with
-  | Regex.or x1 x2 =>
-    if x1 = y
-    then x
-    else if x1 < y
-    then Regex.or x1 (insertOr x2 y)
-    else Regex.or x1 (Regex.or y x2)
+  match y with
+  | Regex.or y1 y2 =>
+    if y1 = x
+    then y
+    else if y1 < x
+    then Regex.or y1 (insertOr x y2)
+    else Regex.or x (Regex.or y1 y2)
   | _ =>
     mkOr x y
 
 def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  match x with
-  | Regex.or x1 x2 =>
-    match y with
+  match y with
+  | Regex.or y1 y2 =>
+    match x with
     | Regex.or _ _ =>
-      insertOr (mergeOr x2 y) x1
-    | _ => insertOr x y
-  | _ => insertOr y x
+      insertOr y1 (mergeOr x y2)
+    | _ =>
+      insertOr x y
+  | _ =>
+    insertOr y x
 
 def smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match x with
@@ -146,13 +148,13 @@ def smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
     | Regex.or _ _ =>
       mergeOr x y
     | _ =>
-      insertOr x y
+      insertOr y x
   | x' =>
     match y with
     | Regex.emptyset => x'
     | Regex.star Regex.any => Regex.star Regex.any
     | Regex.or y1 y2 =>
-      insertOr (Regex.or y1 y2) x'
+      insertOr x' (Regex.or y1 y2)
     | y' =>
       mkOr x' y'
 

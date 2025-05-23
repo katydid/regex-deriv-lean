@@ -37,8 +37,8 @@ theorem Regex.simp_or_comm {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
 
 theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (insertOr x y) := by
-  induction x with
-  | or x1 x2 ih1 ih2 =>
+  induction y with
+  | or y1 y2 ih1 ih2 =>
     unfold insertOr
     split_ifs
     · case pos h =>
@@ -51,22 +51,21 @@ theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Re
       simp only [denote]
       ac_rfl
     · case neg h =>
-      simp only [denote]
-      ac_rfl
+      rfl
   | _ =>
     apply mkOr_is_correct_denote
 
 theorem mergeOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (mergeOr x y) := by
-  induction x with
-  | or x1 x2 ihx1 ihx2 =>
-    cases y with
-    | or y1 y2 =>
+  induction y with
+  | or y1 y2 ihy1 ihy2 =>
+    cases x with
+    | or x1 x2 =>
       rw [mergeOr]
       repeat rw [denote]
       rw [<- insertOr_is_correct_denote]
       repeat rw [denote]
-      rw [<- ihx2]
+      rw [<- ihy2]
       repeat rw [denote]
       ac_rfl
     | _ =>
@@ -96,8 +95,6 @@ theorem smartOr_is_correct_denote_star_l {α: Type} [Ord α] [DecidableEq α] (x
       apply Language.simp_or_star_any_r_is_star_any
     · rename_i y1 y2
       rw [<- insertOr_is_correct_denote]
-      simp only [denote]
-      ac_rfl
     · rw [mkOr_is_correct_denote]
 
 theorem smartOr_is_correct_denote_star_r {α: Type} [Ord α] [DecidableEq α] (x y1: Regex α):
@@ -118,6 +115,8 @@ theorem smartOr_is_correct_denote_star_r {α: Type} [Ord α] [DecidableEq α] (x
       apply Language.simp_or_star_any_l_is_star_any
     · rename_i y1 y2
       rw [<- insertOr_is_correct_denote]
+      simp only [denote]
+      ac_rfl
     · rw [mkOr_is_correct_denote]
 
 theorem smartOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
@@ -145,6 +144,8 @@ theorem smartOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Reg
       unfold smartOr
       simp only
       rw [<- insertOr_is_correct_denote]
+      simp only [denote]
+      ac_rfl
   | _ =>
     induction y with
     | emptyset =>
@@ -157,7 +158,5 @@ theorem smartOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Reg
       unfold smartOr
       simp only
       rw [<- insertOr_is_correct_denote]
-      simp only [denote]
-      ac_rfl
     | _ =>
       rw [smartOr] <;> simp only [mkOr, reduceCtorEq, imp_self, implies_true, mkOr_is_correct_denote]
