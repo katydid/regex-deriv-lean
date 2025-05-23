@@ -69,31 +69,38 @@ theorem mkOr_makes_smartOr {α: Type} [Ord α] [DecidableEq α] {x y: Regex α}
     · apply Regex.SmartOrElem.mk <;> assumption
     · apply Regex.SmartOrElem.mk <;> assumption
 
+private lemma insertOr_NotOr_NotOr_OrIsSmart
+  {α: Type} [Ord α] [DecidableEq α]
+  {x y: Regex α}
+  (hx: Regex.NotOr x) (hy: Regex.NotOr y):
+  OrIsSmart (insertOr x y) := by
+  unfold insertOr
+  cases hx with
+  | emptyset =>
+    simp only
+    exact mkOr_makes_smartOr Regex.NotOr.emptyset hy
+  | emptystr =>
+    simp only
+    exact mkOr_makes_smartOr Regex.NotOr.emptystr hy
+  | any =>
+    simp only
+    exact mkOr_makes_smartOr Regex.NotOr.any hy
+  | pred p =>
+    simp only
+    exact mkOr_makes_smartOr (Regex.NotOr.pred p) hy
+  | concat x1 x2 =>
+    simp only
+    exact mkOr_makes_smartOr (Regex.NotOr.concat x1 x2) hy
+  | star x1 =>
+    simp only
+    exact mkOr_makes_smartOr (Regex.NotOr.star x1) hy
+
 theorem insertOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: OrIsSmart x) (hy: Regex.NotOr y):
   OrIsSmart (insertOr x y) := by
   induction hx with
-  | singleton x h =>
-    unfold insertOr
-    cases h with
-    | emptyset =>
-      simp only
-      exact mkOr_makes_smartOr Regex.NotOr.emptyset hy
-    | emptystr =>
-      simp only
-      exact mkOr_makes_smartOr Regex.NotOr.emptystr hy
-    | any =>
-      simp only
-      exact mkOr_makes_smartOr Regex.NotOr.any hy
-    | pred p =>
-      simp only
-      exact mkOr_makes_smartOr (Regex.NotOr.pred p) hy
-    | concat x1 x2 =>
-      simp only
-      exact mkOr_makes_smartOr (Regex.NotOr.concat x1 x2) hy
-    | star x1 =>
-      simp only
-      exact mkOr_makes_smartOr (Regex.NotOr.star x1) hy
+  | singleton x hx =>
+    apply insertOr_NotOr_NotOr_OrIsSmart hx hy
   | lastcons x1x2 x1 x2 hx1x2 ltx1x2 hx1 hx2 =>
     rw [hx1x2]
     unfold insertOr
