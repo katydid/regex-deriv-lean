@@ -30,6 +30,19 @@ theorem mkOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq α] (x y:
   · case neg h =>
     apply Language.simp_or_comm
 
+theorem consOr_is_correct_denote {α: Type} [o: Ord α] [dr: DecidableEq α] (x y: Regex α):
+  denote (Regex.or x y) = denote (consOr x y) := by
+  unfold consOr
+  split_ifs
+  · case pos h =>
+    rw [h]
+    apply Language.simp_or_emptyset_l_is_r
+  · case pos h =>
+    rw [h]
+    apply Language.simp_or_star_any_l_is_star_any
+  · case neg _ =>
+    rfl
+
 theorem Regex.simp_or_comm {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (Regex.or y x) := by
   simp only [denote]
@@ -52,7 +65,7 @@ theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Re
       ac_rfl
     · case neg h =>
       simp only [denote]
-      rw [<- mkOr_is_correct_denote]
+      rw [<- consOr_is_correct_denote]
       rfl
   | _ =>
     apply mkOr_is_correct_denote

@@ -96,6 +96,7 @@ def smartConcat (x y: Regex α): Regex α :=
       | Regex.emptystr => x
       | _otherwise => Regex.concat x y
 
+-- mkOr assumes that both x and y are not or expressions.
 def mkOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   if x = y
   then x
@@ -110,6 +111,15 @@ def mkOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   else if x < y
   then Regex.or x y
   else Regex.or y x
+
+-- consOr assumes that y is an SmartOr expression
+-- Also that y is an or expression and x < y1
+def consOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
+  if x = Regex.emptyset
+  then y
+  else if x = Regex.star Regex.any
+  then x
+  else Regex.or x y
 
 -- insertOr inserts x into y, where y might be or expression and x is not.
 -- It inserts x into y if x is not a duplicate found in the or expression of y.
@@ -127,9 +137,8 @@ def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
     else if y1 < x
     -- We don't call mkOr, since y1 is already a SmartOrElem
     then Regex.or y1 (insertOr x y2)
-    -- We call mkOr on x, since x might be emptyset or star any
-    -- We don't call mkOr on y1 y2, since they are already SmartOrElem's and not duplicates.
-    else mkOr x (Regex.or y1 y2)
+    -- We call consOr on x, since x might be emptyset or star any and y is SmartOr
+    else consOr x y
   | _ =>
     -- We call mkOr, since x might be emptyset or star any or equal to y
     mkOr x y

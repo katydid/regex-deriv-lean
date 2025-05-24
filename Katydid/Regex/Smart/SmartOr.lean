@@ -4,6 +4,7 @@ import Katydid.Std.Ordering
 
 import Katydid.Regex.Smart.SmartRegex
 import Katydid.Regex.Smart.SmartOrElem
+import Katydid.Regex.Smart.LawfulEqOrd
 
 open SmartRegex
 
@@ -14,46 +15,53 @@ inductive OrIsSmart [LT (Regex α)]: Regex α -> Prop where
   | singleton (x: Regex α):
     Regex.NotOr x -- or list only element
     -> OrIsSmart x
-  | lastcons (xy x y: Regex α):
-    xy = Regex.or x y
-    -> x < y -- sorted
+  | lastcons (x y: Regex α):
+    x < y -- sorted
     -> Regex.SmartOrElem x -- or list second last element
     -> Regex.SmartOrElem y -- or list last element
-    -> OrIsSmart xy
-  | cons (xy x y y1 y2: Regex α):
-    xy = Regex.or x y
-    -> y = Regex.or y1 y2
-    -> x < y1 -- sorted
+    -> OrIsSmart (Regex.or x y)
+  | cons (x y1 y2: Regex α):
+    x < y1 -- sorted
     -> Regex.SmartOrElem x -- or list element
-    -> OrIsSmart y -- sorted or list of at least two elements
-    -> OrIsSmart xy
+    -> OrIsSmart (Regex.or y1 y2) -- sorted or list of at least two elements
+    -> OrIsSmart (Regex.or x (Regex.or y1 y2))
 
--- TODO: Wait for Std.LawfulEqOrd to land, see
--- https://leanprover.zulipchat.com/#narrow/channel/217875-Is-there-code-for-X.3F/topic/.E2.9C.94.20Ordering.2Eeq.20is.20equivalent.20to.20LawfulEq/with/519113072
-theorem neq_is_lt_or_gt [o: Ord α] [d: DecidableEq α] {x y: α}
-  (neq: x ≠ y): (x < y) \/ (x > y) := by
-  admit
+theorem OrIsSmart.cons_mkOr
+  {α: Type} [Ord α] [DecidableEq α] {x y1 y2: Regex α}
+  (hx: Regex.NotOr x)
+  (hy: OrIsSmart (mkOr y1 y2))
+  (hlty1: x < y1)
+  (hlty2: x < y2):
+  (OrIsSmart (Regex.or x (mkOr y1 y2))) := by
+  sorry
 
-theorem lt_and_gt_is_impossible [o: Ord α] [d: DecidableEq α] {x y: α}
-  (hlt: x < y) (hgt: x > y): False := by
-  admit
+theorem OrIsSmart.cons_insertOr
+  {α: Type} [Ord α] [DecidableEq α] {x y z1 z2: Regex α}
+  (hx: Regex.SmartOrElem x)
+  (hy: Regex.NotOr y)
+  (hi: OrIsSmart (insertOr y (Regex.or z1 z2)))
+  (hlty: x < y)
+  (hltz1: x < z1):
+  (OrIsSmart (Regex.or x (insertOr y (Regex.or z1 z2)))) := by
+  sorry
 
-theorem not_lt_is_gt [o: Ord α] [d: DecidableEq α] {x y: α}
-  (hlt: Not (x < y)) (hneq: x ≠ y): x > y := by
-  admit
-
-theorem not_gt_is_lt [o: Ord α] [d: DecidableEq α] {x y: α}
-  (hlt: Not (x > y)) (hneq: x ≠ y): x < y := by
-  admit
-
-theorem not_less_than_is_greater_than [o: Ord α] [DecidableEq α] {x y: α}
-  (neq: x ≠ y) (nlt: Not (x < y)): x > y := by
-  have h := neq_is_lt_or_gt neq
-  cases h
-  case inl h =>
-    contradiction
-  case inr h =>
-    exact h
+theorem consOr_makes_smartOr
+  {α: Type} [Ord α] [DecidableEq α] {x y1 y2: Regex α}
+  (hx: Regex.NotOr x)
+  (hy: OrIsSmart (Regex.or y1 y2))
+  (hlty1: x < y1):
+  (OrIsSmart (consOr x (Regex.or y1 y2))) := by
+  unfold consOr
+  split_ifs
+  case pos h =>
+    exact hy
+  case pos h =>
+    rw [h]
+    apply OrIsSmart.singleton
+    apply Regex.NotOr.star
+  case neg h =>
+    apply OrIsSmart.cons x y1 y2 hlty1 ?_ hy
+    apply Regex.SmartOrElem.mk <;> assumption
 
 theorem mkOr_makes_smartOr {α: Type} [Ord α] [DecidableEq α] {x y: Regex α}
   (notorx: Regex.NotOr x) (notory: Regex.NotOr y):
@@ -71,12 +79,12 @@ theorem mkOr_makes_smartOr {α: Type} [Ord α] [DecidableEq α] {x y: Regex α}
   case pos h =>
     apply OrIsSmart.singleton y notory
   case pos h =>
-    apply OrIsSmart.lastcons (Regex.or x y) x y rfl h
+    apply OrIsSmart.lastcons x y h
     · apply Regex.SmartOrElem.mk <;> assumption
     · apply Regex.SmartOrElem.mk <;> assumption
   case neg h =>
     rename_i hneq hxemptyset hxanystar hyemptyset hyanystar
-    apply OrIsSmart.lastcons (Regex.or y x) y x rfl
+    apply OrIsSmart.lastcons y x
     · apply not_less_than_is_greater_than hneq h
     · apply Regex.SmartOrElem.mk <;> assumption
     · apply Regex.SmartOrElem.mk <;> assumption
@@ -160,38 +168,37 @@ theorem insertOr_preserves_smartOr
   induction hy with
   | singleton y hy =>
     apply insertOr_NotOr_NotOr_OrIsSmart hx hy
-  | lastcons y1y2 y1 y2 hy1y2 lty1y2 hy1 hy2 =>
-    rw [hy1y2]
+  | lastcons y1 y2 lty1y2 hy1 hy2 =>
     unfold insertOr
     split_ifs
     case pos h =>
-      exact OrIsSmart.lastcons (Regex.or y1 y2) y1 y2 rfl lty1y2 hy1 hy2
+      exact OrIsSmart.lastcons y1 y2 lty1y2 hy1 hy2
     case pos hneq hlt =>
       rw [insertOr]
       · have hhy1 := SmartOrElem_implies_NotOr hy1
         have hhy2 := SmartOrElem_implies_NotOr hy2
         have hh := mkOr_makes_smartOr hx hhy2
-        cases hh with
-        | singleton _ hxy2 =>
-          have hxy2' := Regex.NotOr_mkOr_implies_idemp hxy2
-          apply OrIsSmart.lastcons (Regex.or y1 (mkOr x y2)) y1 (mkOr y2 x) ?_ ?_ hy1 ?_
-          · rw [Regex.mkOr_comm]
-          · sorry -- true by cases
-          · sorry -- true by cases
-        | lastcons =>
-          sorry
-        | cons =>
-          sorry
-      · intro x1' x2' hh
-        -- rw [hh] at hx2
-        -- Regex.orElem (x1'.or x2') -> False
-        sorry
+        apply OrIsSmart.cons_mkOr hhy1 hh hlt lty1y2
+      · intro y21 y22 hh
+        rw [hh] at hy2
+        contradiction
     case neg hneq hnlt =>
-      have h := not_less_than_is_greater_than hneq hnlt
-      sorry
-
-  | cons h =>
-    sorry
+      have hgt := not_less_than_is_greater_than hneq hnlt
+      apply consOr_makes_smartOr hx ?_ hgt
+      apply OrIsSmart.lastcons y1 y2 lty1y2 hy1 hy2
+  | cons y1 y21 y22 hlt hy1 hy2 ih =>
+    unfold insertOr
+    split_ifs
+    case pos h =>
+      rw [<- h] at ih
+      apply OrIsSmart.cons y1 y21 y22 hlt hy1 hy2
+    case pos h =>
+      apply OrIsSmart.cons_insertOr hy1 hx ih h hlt
+    case neg h =>
+      rename_i h'
+      have hgt := not_less_than_is_greater_than h' h
+      apply consOr_makes_smartOr hx ?_ hgt
+      apply OrIsSmart.cons y1 y21 y22 hlt hy1 hy2
 
 theorem mergeOr_preserves_smartOr_for_notor_left
   {α: Type} [Ord α] [DecidableEq α] {x y: Regex α} (hx: Regex.NotOr x) (hy: OrIsSmart y):
@@ -233,10 +240,8 @@ theorem mergeOr_preserves_smartOr
       apply insertOr_preserves_smartOr
       · exact Regex.NotOr.split.otherwise h
       · exact hx
-  | lastcons y1y2 y1 y2 hy1y2 lty1y2 hy1 hy2 =>
+  | lastcons y1 y2 lty1y2 hy1 hy2 =>
     unfold mergeOr
-    rw [hy1y2]
-    simp only
     split
     next _ x1 x2 =>
       have hy1' := SmartOrElem_implies_NotOr hy1
@@ -247,29 +252,15 @@ theorem mergeOr_preserves_smartOr
     next _ h =>
       have h := Regex.NotOr.split.otherwise h
       apply insertOr_preserves_smartOr h
-      apply OrIsSmart.lastcons (Regex.or y1 y2) y1 y2 rfl lty1y2 hy1 hy2
-  | cons y y1 y2 y21 y22 hy1y2 hy21y22 hlt hy1 hy2 ih =>
+      apply OrIsSmart.lastcons y1 y2 lty1y2 hy1 hy2
+  | cons y1 y21 y22 hlt hy1 hy2 ih =>
     have hny1 := SmartOrElem_implies_NotOr hy1
     unfold mergeOr
     split
-    next _ y1 y2 =>
-      split
-      next _ x1 x2 =>
-        cases hy1y2
-        subst_vars
-        apply insertOr_preserves_smartOr hny1 ih
-      next _ h =>
-        cases hy1y2
-        subst_vars
-        apply insertOr_preserves_smartOr
-        · apply Regex.NotOr.split.otherwise h
-        · apply OrIsSmart.cons (Regex.or y1 (Regex.or y21 y22)) y1 (Regex.or y21 y22) y21 y22 rfl rfl hlt hy1 hy2
+    next _ x1 x2 =>
+      apply insertOr_preserves_smartOr hny1 ih
     next _ h hn =>
+      have hn := Regex.NotOr.split.otherwise hn
       apply insertOr_preserves_smartOr
-      · apply Regex.NotOr.split.otherwise hn
-      · exact hx
-
-theorem smartOr_preserves_smartOr
-  {α: Type} [Ord α] [DecidableEq α] (x y: Regex α) (hx: OrIsSmart x) (hy: OrIsSmart y):
-  OrIsSmart (smartOr x y) := by
-  sorry
+      · exact hn
+      · apply OrIsSmart.cons _ _ _ hlt hy1 hy2
