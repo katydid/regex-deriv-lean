@@ -54,21 +54,38 @@ theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Re
   | or y1 y2 ih1 ih2 =>
     unfold insertOr
     split_ifs
-    · case pos h =>
+    case pos h =>
+      have h := eq_of_beq h
       rw [h]
       simp only [denote]
-      ac_rfl
-    · case pos h =>
-      simp only [denote]
-      rw [<- ih2]
-      simp only [denote]
-      ac_rfl
-    · case neg h =>
-      simp only [denote]
-      rw [<- consOr_is_correct_denote]
-      rfl
+      apply Language.simp_or_star_any_l_is_star_any
+    case neg h =>
+      simp only
+      split_ifs
+      · case pos h =>
+        rw [h]
+        simp only [denote]
+        ac_rfl
+      · case pos h =>
+        simp only [denote]
+        rw [<- ih2]
+        simp only [denote]
+        ac_rfl
+      · case neg h =>
+        simp only [denote]
+        rw [<- consOr_is_correct_denote]
+        rfl
   | _ =>
-    apply mkOr_is_correct_denote
+    unfold insertOr
+    simp only
+    split_ifs
+    case pos h =>
+      have h := eq_of_beq h
+      rw [h]
+      simp only [denote]
+      apply Language.simp_or_star_any_l_is_star_any
+    case neg h =>
+      apply mkOr_is_correct_denote
 
 theorem mergeOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Regex α):
   denote (Regex.or x y) = denote (mergeOr x y) := by
