@@ -28,6 +28,10 @@ instance inst_regex_beq {α: Type u} [DecidableEq (Regex α)]: BEq (Regex α) :=
 def Regex.eq_of_beq {α: Type u} {a b : Regex α} [d: DecidableEq (Regex α)]
   (heq: a == b): a = b := of_decide_eq_true heq
 
+instance [DecidableEq α]: DecidableEq (Regex α) := inferInstance
+
+instance [Ord α]: Ord (Regex α) := inferInstance
+
 def Regex.rfl {α: Type u} {a : Regex α} [d: DecidableEq (Regex α)]: a == a := of_decide_eq_self_eq_true a
 
 instance {α: Type u} [DecidableEq α] : LawfulBEq (Regex α) where
@@ -121,9 +125,13 @@ def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
     if y1 = x
     then y
     else if y1 < x
+    -- We don't call mkOr, since y1 is already a SmartOrElem
     then Regex.or y1 (insertOr x y2)
-    else Regex.or x (Regex.or y1 y2)
+    -- We call mkOr on x, since x might be emptyset or star any
+    -- We don't call mkOr on y1 y2, since they are already SmartOrElem's and not duplicates.
+    else mkOr x (Regex.or y1 y2)
   | _ =>
+    -- We call mkOr, since x might be emptyset or star any or equal to y
     mkOr x y
 
 def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=

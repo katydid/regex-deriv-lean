@@ -51,6 +51,8 @@ theorem insertOr_is_correct_denote {α: Type} [Ord α] [DecidableEq α] (x y: Re
       simp only [denote]
       ac_rfl
     · case neg h =>
+      simp only [denote]
+      rw [<- mkOr_is_correct_denote]
       rfl
   | _ =>
     apply mkOr_is_correct_denote
