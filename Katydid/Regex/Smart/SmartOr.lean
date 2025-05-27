@@ -146,6 +146,7 @@ theorem OrIsSmart.cons_insertOr
   (hy: Regex.NotOr y)
   (hny: y ≠ Regex.star Regex.any)
   (hi: OrIsSmart (insertOr y (Regex.or z1 z2)))
+  (hz: OrIsSmart (Regex.or z1 z2))
   (hlty: x < y)
   (hltz1: x < z1):
   (OrIsSmart (Regex.or x (insertOr y (Regex.or z1 z2)))) := by
@@ -159,13 +160,18 @@ theorem OrIsSmart.cons_insertOr
     simp only
     split_ifs
     case pos h =>
-      apply OrIsSmart.cons x z1 z2 hltz1 hx
-      sorry
+      apply OrIsSmart.cons x z1 z2 hltz1 hx hz
     case pos h =>
       apply OrIsSmart.cons x z1 (insertOr y z2) hltz1 hx
       sorry
     case neg h =>
-      sorry
+      unfold consOr
+      split_ifs
+      case pos h' =>
+        apply OrIsSmart.cons x z1 z2 hltz1 hx hz
+      case neg h' =>
+        apply OrIsSmart.cons x y (Regex.or z1 z2) hlty hx
+        sorry
 
 private lemma insertOr_NotOr_NotOr_OrIsSmart
   {α: Type} [Ord α] [DecidableEq α]
@@ -282,7 +288,7 @@ theorem insertOr_preserves_smartOr
         apply OrIsSmart.cons y1 y21 y22 hlt hy1 hy2
       case pos h h' h'' =>
         have h := neq_of_beq h
-        apply OrIsSmart.cons_insertOr hy1 hx h ih h'' hlt
+        apply OrIsSmart.cons_insertOr hy1 hx h ih hy2 h'' hlt
       case neg h =>
         rename_i h'
         have hgt := not_less_than_is_greater_than h' h

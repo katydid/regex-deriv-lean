@@ -131,18 +131,18 @@ def consOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
 --   insertOr a a = a
 def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   if x == Regex.star Regex.any
-  then
-    x
+    then x
   else
     match y with
     | Regex.or y1 y2 =>
       if y1 = x
-      then y
+        then y
       else if y1 < x
       -- We don't call mkOr, since y1 is already a SmartOrElem
-      then Regex.or y1 (insertOr x y2)
+        then Regex.or y1 (insertOr x y2)
       -- We call consOr on x, since x might be emptyset or star any and y is SmartOr
-      else consOr x y
+      else
+        consOr x y
     | _ =>
       -- We call mkOr, since x might be emptyset or star any or equal to y
       mkOr x y
