@@ -90,8 +90,8 @@ instance : Predicate Nat (Pred Nat) where eval := Pred.eval; decidableEval := pr
 instance : Predicate Char (Pred Char) where eval := Pred.eval; decidableEval := pred_is_decpred
 def isLowerCase: Pred Char := Pred.and (Pred.ge 'a') (Pred.le 'z')
 example : Predicate.eval isLowerCase 'A' = false := by simp [Predicate.eval, Pred.eval] <;> decide
-example : Predicate.eval isLowerCase 'a' = true := by simp [Predicate.eval, Pred.eval] <;> decide
-example : Predicate.eval isLowerCase 'l' = true := by simp [Predicate.eval, Pred.eval] <;> decide
+example : Predicate.eval isLowerCase 'a' = true := by simp [Predicate.eval, Pred.eval] <;> native_decide
+example : Predicate.eval isLowerCase 'l' = true := by simp [Predicate.eval, Pred.eval] <;> native_decide
 
 -- Test that we can evaluate a Predicate via a generic function based on the class and not a specific instance
 private def evalPredicate {α: Type u} {φ: Type v} [instPredicate: Predicate α φ] (p: φ) (a: α): Prop := instPredicate.eval p a

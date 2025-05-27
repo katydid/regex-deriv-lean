@@ -117,10 +117,10 @@ theorem derive_commutes {α: Type} (r: Regex α) (x: α):
   denote (derive r x) = Language.derive (denote r) x := by
   induction r with
   | emptyset =>
-    simp only [denote]
+    simp only [denote, derive]
     rw [Language.derive_emptyset]
   | emptystr =>
-    simp only [denote]
+    simp only [denote, derive]
     rw [Language.derive_emptystr]
   | pred p =>
     simp only [denote]
@@ -129,13 +129,13 @@ theorem derive_commutes {α: Type} (r: Regex α) (x: α):
     rw [denote_onlyif]
     simp only [denote]
   | or p q ihp ihq =>
-    simp only [denote]
+    simp only [denote, derive]
     rw [Language.derive_or]
     unfold Language.or
     rw [ihp]
     rw [ihq]
   | concat p q ihp ihq =>
-    simp only [denote]
+    simp only [denote, derive]
     rw [Language.derive_concat]
     rw [<- ihp]
     rw [<- ihq]
@@ -143,7 +143,7 @@ theorem derive_commutes {α: Type} (r: Regex α) (x: α):
     congrm (Language.or (Language.concat (denote (derive p x)) (denote q)) ?_)
     rw [null_commutes]
   | star r ih =>
-    simp only [denote]
+    simp only [denote, derive]
     rw [Language.derive_star]
     guard_target =
       Language.concat (denote (derive r x)) (Language.star (denote r))

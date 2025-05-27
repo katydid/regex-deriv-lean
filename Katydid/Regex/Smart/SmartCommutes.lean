@@ -88,19 +88,19 @@ theorem smartConcat_is_concat {α: Type} [Ord α] (x y: Regex α):
     simp only [denote]
     exact Language.simp_concat_emptystr_l_is_r (denote y)
   | any =>
-    cases y <;> simp only [denote]
+    cases y <;> simp only [denote, smartConcat]
     · case emptyset =>
       apply Language.simp_concat_emptyset_r_is_emptyset
     · case emptystr =>
       apply Language.simp_concat_emptystr_r_is_l
   | pred p =>
-    cases y <;> simp only [denote]
+    cases y <;> simp only [denote, smartConcat]
     · case emptyset =>
       apply Language.simp_concat_emptyset_r_is_emptyset
     · case emptystr =>
       apply Language.simp_concat_emptystr_r_is_l
   | or x1 x2 =>
-    cases y <;> simp only [denote]
+    cases y <;> simp only [denote, smartConcat]
     · case emptyset =>
       apply Language.simp_concat_emptyset_r_is_emptyset
     · case emptystr =>
@@ -112,7 +112,7 @@ theorem smartConcat_is_concat {α: Type} [Ord α] (x y: Regex α):
     simp only [denote]
     rw [Language.simp_concat_assoc]
   | star x1 =>
-    cases y <;> simp only [denote]
+    cases y <;> simp only [denote, smartConcat]
     · case emptyset =>
       apply Language.simp_concat_emptyset_r_is_emptyset
     · case emptystr =>
@@ -121,13 +121,14 @@ theorem smartConcat_is_concat {α: Type} [Ord α] (x y: Regex α):
 lemma derive_commutes_emptyset [Ord α] [DecidableEq α] {x: α}:
   denote (derive Regex.emptyset x) = Language.derive (denote Regex.emptyset) x := by
   funext xs
-  simp only [denote, Language.emptyset, Language.derive, Language.derives]
+  simp only [derive, denote, Language.emptyset, Language.derive, Language.derives]
 
 lemma derive_commutes_emptystr [Ord α] [DecidableEq α] {x: α}:
   denote (derive Regex.emptystr x) = Language.derive (denote Regex.emptystr) x := by
   funext xs
   simp only [
     denote,
+    derive,
     Language.emptyset, Language.derive, Language.derives, Language.emptystr,
     singleton_append,
     reduceCtorEq,
