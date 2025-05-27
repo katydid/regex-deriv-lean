@@ -82,7 +82,7 @@ def IsSmartParams (params: List Desc): Prop := ∀ param, param ∈ params → I
 
 def conj_is_smart_params {p: Desc} {ps: List Desc} (isSmart: IsSmartParams (p :: ps)):
   IsSmart p /\ IsSmartParams ps :=
-  ⟨ isSmart p (List.mem_cons_self _ _), λ p' h => isSmart p' (List.mem_cons_of_mem _ h) ⟩
+  ⟨ isSmart p (@List.mem_cons_self _ _ _), λ p' h => isSmart p' (List.mem_cons_of_mem _ h) ⟩
 
 def cons_is_smart_params (sx: IsSmart x) (sxs: IsSmartParams xs): IsSmartParams (x :: xs) := by
   unfold IsSmartParams
@@ -96,7 +96,7 @@ def cons_is_smart_params (sx: IsSmart x) (sxs: IsSmartParams xs): IsSmartParams 
 
 def SmartParams := {params: List Desc // IsSmartParams params}
 
-def empty_smart_params: SmartParams := ⟨[], λ p h => False.elim (List.not_mem_nil p h)⟩
+def empty_smart_params: SmartParams := ⟨[], λ p h => False.elim (@List.not_mem_nil _ p h)⟩
 
 def cons_smart_params (sx: SmartDesc) (sxs: SmartParams): SmartParams :=
   match sx.subtype with

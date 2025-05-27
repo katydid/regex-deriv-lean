@@ -82,7 +82,7 @@ theorem list_length_zero_is_empty (xs: List α):
     rfl
   · intro h'
     -- simp? at h'
-    simp only [length_cons, AddLeftCancelMonoid.add_eq_zero, length_eq_zero, one_ne_zero, and_false] at h'
+    simp only [length_cons, AddLeftCancelMonoid.add_eq_zero, length_eq_zero_iff, one_ne_zero, and_false] at h'
 
 theorem list_app_nil_l (xs: List α):
   [] ++ xs = xs := by
@@ -160,7 +160,7 @@ theorem list_app_eq_unit {a: α} {xs ys: List α}:
     case right => assumption
   | cons head tail =>
     intro hy
-    simp only [cons_append, cons.injEq, append_eq_nil] at hy
+    simp only [cons_append, cons.injEq, append_eq_nil_iff] at hy
     apply Or.intro_right
     cases hy with
     | intro h1 h2 =>
@@ -202,7 +202,7 @@ theorem list_app_inj_tail {xs ys: List α} {x y: α}:
     | nil =>
       intro h'
       -- simp? at h'
-      simp only [cons_append, nil_append, cons.injEq, append_eq_nil, cons_ne_self, and_false] at h'
+      simp only [cons_append, nil_append, cons.injEq, append_eq_nil_iff, cons_ne_self, and_false] at h'
     | cons heady taily =>
       intro h'
       simp only [cons_append, cons.injEq] at h'
@@ -632,7 +632,7 @@ theorem list_take_app_length (xs ys: List α):
   revert ys
   induction xs with
   | nil =>
-    simp only [take, forall_const]
+    simp only [length_nil, nil_append, take_zero, implies_true]
   | cons x xs ih =>
     intro ys
     rw [length]
@@ -709,13 +709,7 @@ theorem list_prefix_leq_length (xs ys zs: List α):
     omega
 
 theorem list_drop_length_prefix_is_suffix (xs ys: List α):
-  drop (length xs) (xs ++ ys) = ys := by
-  induction xs with
-  | nil =>
-    simp only [drop, nil_append]
-  | cons x xs ih =>
-    simp only [drop, add_eq, add_zero, append_eq]
-    exact ih
+  drop (length xs) (xs ++ ys) = ys := drop_left
 
 theorem list_drop_app_length (xs ys: List α):
   drop (length xs) (xs ++ ys) = ys := by
@@ -772,13 +766,7 @@ theorem list_drop_app' (n: Nat) (xs ys: List α):
       rw [ih]
 
 theorem list_take_length_prefix_is_prefix (xs ys: List α):
-  take (length xs) (xs ++ ys) = xs := by
-  induction xs with
-  | nil =>
-    simp only [take]
-  | cons x xs ih =>
-    simp only [take, add_eq, add_zero, append_eq, cons.injEq, true_and]
-    exact ih
+  take (length xs) (xs ++ ys) = xs := take_left
 
 theorem list_prefix_length_leq: ∀ (xs ys zs: List α),
   xs ++ ys = zs -> length xs <= length zs := by
@@ -917,13 +905,13 @@ theorem list_split_flatten {α: Type} (zs: List α):
 
 theorem list_splitAt_eq (n: Nat) (xs: List α):
   splitAt n xs = (xs.take n, xs.drop n) :=
-  splitAt_eq n xs
+  @splitAt_eq α n xs
 
 theorem list_splitAt_length {α: Type} (n: Nat) (xs: List α) (hn: n ≤ length xs):
   ∃ xs1 xs2, (xs1, xs2) = splitAt n xs
     /\ xs1.length = n
     /\ xs2.length = xs.length - n := by
-  have h := splitAt_eq n xs
+  have h := @splitAt_eq α n xs
   exists take n xs
   exists drop n xs
   split_ands
@@ -946,7 +934,9 @@ theorem list_splitAt_length_exists {α: Type} (xs: List α):
 
 theorem list_eraseDup_does_not_erase_singleton (α: Type) [BEq α] (x: α):
   List.eraseDup [x] = [x] := by
-  simp [eraseDup]
+  rw [eraseDup]
+  rw [pwFilter]
+  simp only [foldr_cons, foldr_nil, not_mem_nil, IsEmpty.forall_iff, implies_true, ↓reduceIte]
 
 theorem list_notin_cons (y: α) (x: α) (xs: List α):
   y ∉ x :: xs -> y ≠ x /\ y ∉ xs := by
