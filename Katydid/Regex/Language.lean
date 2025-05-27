@@ -216,7 +216,7 @@ theorem null_iff_concat {α: Type} {P Q: Lang α}:
   refine Iff.intro ?toFun ?invFun
   case toFun =>
     intro ⟨x, y, hx, hy, hxy⟩
-    simp only [nil_eq, append_eq_nil] at hxy
+    simp only [nil_eq, append_eq_nil_iff] at hxy
     simp only [hxy] at hx hy
     exact ⟨hx, hy⟩
   case invFun =>
@@ -886,7 +886,7 @@ theorem simp_not_and_demorgen
   unfold or
   unfold not
   simp only [eq_iff_iff]
-  exact Decidable.not_and_iff_or_not_not
+  exact Decidable.not_and_iff_not_or_not
 
 theorem simp_not_or_demorgen (r s: Lang α):
   not (or r s) = and (not r) (not s) := by
