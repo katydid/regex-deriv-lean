@@ -20,6 +20,26 @@ theorem not_gt_is_lt [o: Ord α] [d: DecidableEq α] {x y: α}
   (hlt: Not (x > y)) (hneq: x ≠ y): x < y := by
   admit
 
+theorem Ordering.lt_is_lt [o: Ord α] [d: DecidableEq α] {x y: α}
+  (h: Ord.compare x y = Ordering.lt): (x < y) := by
+  admit
+
+theorem Ordering.gt_is_gt [o: Ord α] [d: DecidableEq α] {x y: α}
+  (h: Ord.compare x y = Ordering.gt): (x > y) := by
+  admit
+
+theorem Ordering.eq_is_eq [o: Ord α] [d: DecidableEq α] {x y: α}
+  (h: Ord.compare x y = Ordering.eq): (x = y) := by
+  admit
+
+theorem lt_is_neq [o: Ord α] [d: DecidableEq α] {x y: α}
+  (h: x < y): (x ≠ y) := by
+  admit
+
+theorem gt_is_neq [o: Ord α] [d: DecidableEq α] {x y: α}
+  (h: x > y): (x ≠ y) := by
+  admit
+
 theorem not_less_than_is_greater_than [o: Ord α] [DecidableEq α] {x y: α}
   (neq: x ≠ y) (nlt: Not (x < y)): x > y := by
   have h := neq_is_lt_or_gt neq
@@ -30,5 +50,5 @@ theorem not_less_than_is_greater_than [o: Ord α] [DecidableEq α] {x y: α}
     exact h
 
 theorem neq_of_beq [o: Ord α] [DecidableEq α] {x y: α}:
-  ¬(x == y) = true -> x ≠ y := by
+  (x == y) = false -> x ≠ y := by
   admit

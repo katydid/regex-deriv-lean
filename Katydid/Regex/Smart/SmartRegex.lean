@@ -25,16 +25,16 @@ instance [Ord α]: LT (Regex α) where
 
 instance inst_regex_beq {α: Type u} [DecidableEq (Regex α)]: BEq (Regex α) := inferInstance
 
-def Regex.eq_of_beq {α: Type u} {a b : Regex α} [d: DecidableEq (Regex α)]
-  (heq: a == b): a = b := of_decide_eq_true heq
-
 instance [DecidableEq α]: DecidableEq (Regex α) := inferInstance
 
 instance [Ord α]: Ord (Regex α) := inferInstance
 
-def Regex.rfl {α: Type u} {a : Regex α} [d: DecidableEq (Regex α)]: a == a := of_decide_eq_self_eq_true a
+def Regex.eq_of_beq {α: Type u} {a b : Regex α} [d: DecidableEq α]
+  (heq: a == b): a = b := of_decide_eq_true heq
 
-instance {α: Type u} [DecidableEq α] : LawfulBEq (Regex α) where
+def Regex.rfl {α: Type u} {a: Regex α} [d: DecidableEq (Regex α)]: a == a := of_decide_eq_self_eq_true a
+
+instance instLawfulBEq_Regex {α: Type u} [DecidableEq α]: LawfulBEq (Regex α) where
   eq_of_beq : {a b : Regex α} → a == b → a = b := Regex.eq_of_beq
   rfl : {a : Regex α} → a == a := Regex.rfl
 
@@ -96,31 +96,6 @@ def smartConcat (x y: Regex α): Regex α :=
       | Regex.emptystr => x
       | _otherwise => Regex.concat x y
 
--- mkOr assumes that both x and y are not or expressions.
-def mkOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  if x = y
-  then x
-  else if x = Regex.emptyset
-  then y
-  else if x = Regex.star Regex.any
-  then x
-  else if y = Regex.emptyset
-  then x
-  else if y = Regex.star Regex.any
-  then y
-  else if x < y
-  then Regex.or x y
-  else Regex.or y x
-
--- consOr assumes that y is an SmartOr expression
--- Also that y is an or expression and x < y1
-def consOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  if x = Regex.emptyset
-  then y
-  else if x = Regex.star Regex.any
-  then x
-  else Regex.or x y
-
 -- insertOr inserts x into y, where y might be or expression and x is not.
 -- It inserts x into y if x is not a duplicate found in the or expression of y.
 -- It inserts x into y into a sorted position in the or expression of y.
@@ -130,22 +105,20 @@ def consOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
 --   insertOr a b = Regex.or a b
 --   insertOr a a = a
 def insertOr [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
-  if x == Regex.star Regex.any
-    then x
-  else
-    match y with
-    | Regex.or y1 y2 =>
-      if y1 = x
-        then y
-      else if y1 < x
-      -- We don't call mkOr, since y1 is already a SmartOrElem
-        then Regex.or y1 (insertOr x y2)
-      -- We call consOr on x, since x might be emptyset or star any and y is SmartOr
-      else
-        consOr x y
-    | _ =>
-      -- We call mkOr, since x might be emptyset or star any or equal to y
-      mkOr x y
+  match y with
+  | Regex.or y1 y2 =>
+    if y1 = x
+      then y
+    else if y1 < x
+      then Regex.or y1 (insertOr x y2)
+    else
+      Regex.or x y
+  | _ =>
+    if x = y
+      then y
+    else if y < x
+      then Regex.or y x
+      else Regex.or x y
 
 def mergeOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match y with
@@ -162,22 +135,12 @@ def smartOr {α: Type} [Ord α] [DecidableEq α] (x y: Regex α): Regex α :=
   match x with
   | Regex.emptyset => y
   | Regex.star Regex.any => Regex.star Regex.any
-  | Regex.or _ _ =>
+  | _ =>
     match y with
     | Regex.emptyset => x
     | Regex.star Regex.any => Regex.star Regex.any
-    | Regex.or _ _ =>
-      mergeOr x y
     | _ =>
-      insertOr y x
-  | x' =>
-    match y with
-    | Regex.emptyset => x'
-    | Regex.star Regex.any => Regex.star Regex.any
-    | Regex.or y1 y2 =>
-      insertOr x' (Regex.or y1 y2)
-    | y' =>
-      mkOr x' y'
+      mergeOr x y
 
 def derive [Ord α] [DecidableEq α] (r: Regex α) (a: α): Regex α :=
   match r with
