@@ -52,3 +52,7 @@ theorem not_less_than_is_greater_than [o: Ord α] [DecidableEq α] {x y: α}
 theorem neq_of_beq [o: Ord α] [DecidableEq α] {x y: α}:
   (x == y) = false -> x ≠ y := by
   admit
+
+theorem not_eq_is_neq [o: Ord α] [DecidableEq α] {x y: α}:
+  Not (x = y) <-> x ≠ y := by
+  sorry
