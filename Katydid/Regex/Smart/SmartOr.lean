@@ -26,9 +26,43 @@ inductive OrIsSmart [LT (Regex α)]: Regex α -> Prop where
     -> OrIsSmart (Regex.or y1 y2) -- sorted or list of at least two elements
     -> OrIsSmart (Regex.or x (Regex.or y1 y2))
 
-lemma neq_star_any (h: Regex.star x ≠ Regex.star Regex.any): x ≠ Regex.any := by
-  simp at h
-  assumption
+lemma neq_star_any: Regex.star x ≠ Regex.star Regex.any <-> x ≠ Regex.any := by
+  apply Iff.intro
+  case mp =>
+    intro h
+    simp at h
+    assumption
+  case mpr =>
+    intro h
+    intro h'
+    apply h
+    cases h'
+    rfl
+
+theorem insertOr_preverves_or
+  {α: Type} [Ord α] [DecidableEq α]
+  {x yz: Regex α}
+  (hyz: Regex.isOr yz):
+  Regex.isOr (insertOr x yz) := by
+  cases hyz
+  case intro y h =>
+  cases h
+  case intro z h =>
+  rw [h]
+  unfold insertOr
+  split_ifs
+  case pos h =>
+    unfold Regex.isOr
+    exists y
+    exists z
+  case pos h =>
+    unfold Regex.isOr
+    exists y
+    exists (insertOr x z)
+  case neg h =>
+    unfold Regex.isOr
+    exists x
+    exists (Regex.or y z)
 
 theorem insertOr_preserves_smartOr
   {α: Type} [Ord α] [DecidableEq α]
@@ -111,7 +145,7 @@ theorem insertOr_preserves_smartOr
       case pos h =>
         apply OrIsSmart.lastcons <;> try assumption
         constructor
-        apply neq_star_any hy_starany
+        apply neq_star_any.mp hy_starany
       case neg h =>
         apply OrIsSmart.lastcons <;> try assumption
         rename_i h'
@@ -119,7 +153,7 @@ theorem insertOr_preserves_smartOr
           symm
           assumption
         · constructor
-          apply neq_star_any hy_starany
+          apply neq_star_any.mp hy_starany
   | lastcons y1 y2 lty1y2 hy1 hy2 =>
     unfold insertOr
     split_ifs
@@ -204,13 +238,89 @@ theorem insertOr_preserves_smartOr
       have hgt := not_less_than_is_greater_than h h'
       apply OrIsSmart.cons x y1 (Regex.or y21 y22) hgt hx hy
 
-lemma mergeOr_or_neq_emptyset_or
+lemma insertOr_SmartOrElem_neq_emptyset
   {α: Type} [Ord α] [DecidableEq α]
-  {x1 x2 y1 y2: Regex α}
-  (hx: OrIsSmart (Regex.or x1 x2))
-  (hy: OrIsSmart (Regex.or y1 y2)):
-  mergeOr (Regex.or x1 x2) (Regex.or y1 y2) ≠ Regex.emptyset := by
-  sorry
+  {x y: Regex α}
+  (hx: Regex.SmartOrElem x)
+  (hy: Regex.SmartOrElem y):
+  insertOr x y ≠ Regex.emptyset := by
+  unfold insertOr
+  cases hy
+    <;> simp only
+    <;> cases hx
+    <;> split_ifs
+    <;> simp only [ne_eq, reduceCtorEq, not_false_eq_true]
+
+lemma insertOr_SmartOrElem_neq_is_or
+  {α: Type} [Ord α] [DecidableEq α]
+  {x y: Regex α}
+  (hx: Regex.SmartOrElem x)
+  (hy: Regex.SmartOrElem y)
+  (hxy: x ≠ y):
+  Regex.isOr (insertOr x y) := by
+  unfold insertOr
+  cases hy
+    <;> simp only
+    <;> cases hx
+    <;> split_ifs
+    <;> unfold Regex.isOr
+    <;> (try trivial)
+    <;> simp only [Regex.or.injEq, exists_and_left, exists_eq', and_true]
+
+lemma insertOr_SmartOrElem_neq_is_neq_emptyset
+  {α: Type} [Ord α] [DecidableEq α]
+  {x y: Regex α}
+  (hx: Regex.SmartOrElem x)
+  (hy: Regex.SmartOrElem y)
+  (hxy: x ≠ y):
+  insertOr x y ≠ Regex.emptyset := by
+  have h := insertOr_SmartOrElem_neq_is_or hx hy hxy
+  cases h
+  case intro x h =>
+  cases h
+  case intro y h =>
+  rw [h]
+  intro h'
+  cases h'
+
+lemma insertOr_SmartOrElem_neq_star_any
+  {α: Type} [Ord α] [DecidableEq α]
+  {x y: Regex α}
+  (hx: Regex.SmartOrElem x)
+  (hy: Regex.SmartOrElem y):
+  insertOr x y ≠ Regex.star Regex.any := by
+  unfold insertOr
+  cases hy
+    <;> simp only
+    <;> cases hx
+    <;> split_ifs
+    <;> simp only [ne_eq, reduceCtorEq, not_false_eq_true, neq_star_any]
+    <;> trivial
+
+lemma insertOr_neq_emptyset
+  {α: Type} [Ord α] [DecidableEq α]
+  {x y: Regex α}
+  (hxe: x ≠ Regex.emptyset)
+  (hxo: Regex.NotOr x)
+  (hye: y ≠ Regex.emptyset)
+  (hyo: Regex.NotOr y):
+  insertOr x y ≠ Regex.emptyset := by
+  unfold insertOr
+  cases hyo
+    <;> simp only
+    <;> cases hxo
+    <;> (try trivial)
+    <;> split_ifs
+    <;> simp only [ne_eq, reduceCtorEq, not_false_eq_true]
+
+lemma insertOr_or_neq_emptyset
+  {α: Type} [Ord α] [DecidableEq α]
+  {x1 x2 y: Regex α}
+  (_hx: OrIsSmart (Regex.or x1 x2))
+  (_hy: Regex.SmartOrElem y):
+  insertOr y (Regex.or x1 x2) ≠ Regex.emptyset := by
+  unfold insertOr
+  split_ifs <;> simp
 
 lemma mergeOr_or_neq_emptyset
   {α: Type} [Ord α] [DecidableEq α]
@@ -218,7 +328,328 @@ lemma mergeOr_or_neq_emptyset
   (hx: OrIsSmart (Regex.or x1 x2))
   (hy: Regex.SmartOrElem y):
   mergeOr (Regex.or x1 x2) y ≠ Regex.emptyset := by
-  sorry
+  unfold mergeOr
+  simp only
+  cases hy
+  <;> simp only
+  <;> apply insertOr_or_neq_emptyset hx ?_
+  <;> try constructor <;> assumption
+
+lemma insertOr_comm
+  {α: Type} [Ord α] [DecidableEq α]
+  {x y: Regex α}
+  (hx: Regex.NotOr x)
+  (hy: Regex.NotOr y):
+  insertOr x y = insertOr y x := by
+  unfold insertOr
+  have himpossible := @lt_and_gt_is_impossible (Regex α) _ _ x y
+  have heq := @not_lt_and_not_gt_is_eq (Regex α) _ _ x y
+  cases hx
+  <;> (try simp only)
+  <;> cases hy
+  <;> (try trivial)
+  <;> split_ifs
+  <;> (try trivial)
+  <;> (try simp only)
+  <;> (try nomatch (himpossible (by assumption) (by assumption)))
+  <;> (try (cases (heq (by assumption) (by assumption))))
+  <;> (try (subst_eqs; contradiction))
+
+lemma mergeOr_comm
+  {α: Type} [Ord α] [DecidableEq α]
+  {x y: Regex α}:
+  mergeOr x y = mergeOr y x := by
+  induction x generalizing y with
+  | emptyset =>
+    have hi := @insertOr_comm _ _ _ Regex.emptyset y
+    unfold mergeOr
+    simp only
+    cases y with
+    | emptyset =>
+      simp only
+    | emptystr =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | any =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | pred py =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | concat y1 y2 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | or y1 y2 =>
+      simp only
+    | star y1 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+  | emptystr =>
+    have hi := @insertOr_comm _ _ _ Regex.emptystr y
+    unfold mergeOr
+    simp only
+    cases y with
+    | emptyset =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | emptystr =>
+      simp only
+    | any =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | pred py =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | or y1 y2 =>
+      simp only
+    | concat y1 y2 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | star y1 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+  | any =>
+    have hi := @insertOr_comm _ _ _ Regex.any y
+    unfold mergeOr
+    simp only
+    cases y with
+    | emptyset =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | emptystr =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | any =>
+      simp only
+    | pred py =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | or y1 y2 =>
+      simp only
+    | concat y1 y2 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | star y1 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+  | pred px =>
+    have hi := @insertOr_comm _ _ _ (Regex.pred px) y
+    unfold mergeOr
+    simp only
+    cases y with
+    | emptyset =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | emptystr =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | any =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | pred py =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | or y1 y2 =>
+      simp only
+    | concat y1 y2 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | star y1 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+  | or x1 x2 ihx1 ihx2 =>
+    induction y with
+    | emptyset =>
+      unfold mergeOr
+      simp only
+    | emptystr =>
+      unfold mergeOr
+      simp only
+    | any =>
+      unfold mergeOr
+      simp only
+    | pred py =>
+      unfold mergeOr
+      simp only
+    | or y1 y2 ihy1 ihy2 =>
+      have ihx2' := @ihx2 (Regex.or y1 y2)
+      unfold mergeOr
+      simp only
+      rw [ihy2]
+      rw [<- ihx2]
+      unfold mergeOr
+      rw [<- ihx2]
+      sorry
+    | concat y1 y2 =>
+      unfold mergeOr
+      simp only
+    | star y1 =>
+      unfold mergeOr
+      simp only
+  | concat x1 x2 =>
+    have hi := @insertOr_comm _ _ _ (Regex.concat x1 x2) y
+    unfold mergeOr
+    simp only
+    cases y with
+    | emptyset =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | emptystr =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | any =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | pred py =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | or y1 y2 =>
+      simp only
+    | concat y1 y2 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | star y1 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+  | star x1 =>
+    have hi := @insertOr_comm _ _ _ (Regex.star x1) y
+    unfold mergeOr
+    simp only
+    cases y with
+    | emptyset =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | emptystr =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | any =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | pred py =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | or y1 y2 =>
+      simp only
+    | concat y1 y2 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+    | star y1 =>
+      simp only
+      symm
+      apply hi
+      constructor
+      constructor
+
+lemma mergeOr_or_neq_emptyset_or
+  {α: Type} [Ord α] [DecidableEq α]
+  {x1 x2 y1 y2: Regex α}
+  (hx: OrIsSmart (Regex.or x1 x2))
+  (hy: OrIsSmart (Regex.or y1 y2)):
+  mergeOr (Regex.or x1 x2) (Regex.or y1 y2) ≠ Regex.emptyset := by
+  unfold mergeOr
+  simp only
+  have hy1: Regex.SmartOrElem y1 := by cases hy <;> trivial
+  have hx1: Regex.SmartOrElem x1 := by cases hx <;> trivial
+  unfold mergeOr
+  simp only
+  cases y2 <;> simp only <;> sorry
+
 
 lemma mergeOr_or_neq_star_any_or
   {α: Type} [Ord α] [DecidableEq α]

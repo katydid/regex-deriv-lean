@@ -44,7 +44,7 @@ theorem SmartOrElem_implies_NotOr {x: Regex α}:
 
 -- The definition of Regex.isOr is only here to double check
 -- the definition of NotOr
-private def Regex.isOr (x: Regex α) : Prop :=
+def Regex.isOr (x: Regex α) : Prop :=
   ∃ x1 x2, x = Regex.or x1 x2
 
 -- Regex.NotOr.is_exhaustive checks that if a new
@@ -91,7 +91,7 @@ theorem Regex.NotOr.split.otherwise
 
 -- An alternative definition of SmartOrElem
 -- We keep it as a sanity check that the definition of Regex.SmartOrElem is correct.
-private def Regex.SmartOrElem' (x: Regex α): Prop :=
+def Regex.SmartOrElem' (x: Regex α): Prop :=
   x ≠ Regex.emptyset
   /\ x ≠ Regex.star Regex.any
   /\ Regex.NotOr x
@@ -318,7 +318,7 @@ private theorem Regex.SmartOrElem''_is_SmartOrElem' (x: Regex α):
       contradiction
 
 -- Check that the alternative definition of SmartOrElem is equivalent to the exported one.
-private theorem Regex.SmartOrElem'_is_SmartOrElem {x: Regex α}:
+theorem Regex.SmartOrElem'_is_SmartOrElem {x: Regex α}:
   Regex.SmartOrElem' x <-> Regex.SmartOrElem x := by
   rw [<- Regex.SmartOrElem''_is_SmartOrElem']
   rw [<- Regex.SmartOrElem''_is_SmartOrElem]

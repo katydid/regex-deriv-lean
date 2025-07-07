@@ -12,6 +12,10 @@ theorem lt_and_gt_is_impossible [o: Ord α] [d: DecidableEq α] {x y: α}
   (hlt: x < y) (hgt: x > y): False := by
   admit
 
+theorem not_lt_and_not_gt_is_eq [o: Ord α] [d: DecidableEq α] {x y: α}
+  (hlt: Not (x < y)) (hgt: Not (x > y)): x = y := by
+  admit
+
 theorem not_lt_is_gt [o: Ord α] [d: DecidableEq α] {x y: α}
   (hlt: Not (x < y)) (hneq: x ≠ y): x > y := by
   admit
