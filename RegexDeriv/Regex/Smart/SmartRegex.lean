@@ -1,7 +1,7 @@
-import Katydid.Std.Linter.DetectClassical
+import RegexDeriv.Std.Linter.DetectClassical
 
-import Katydid.Regex.Language
-import Katydid.Regex.Predicate
+import RegexDeriv.Regex.Language
+import RegexDeriv.Regex.Predicate
 
 open List
 

@@ -1,10 +1,10 @@
-import Katydid.Std.Linter.DetectClassical
+import RegexDeriv.Std.Linter.DetectClassical
 
-import Katydid.Std.Ordering
+import RegexDeriv.Std.Ordering
 
-import Katydid.Regex.Smart.SmartRegex
-import Katydid.Regex.Smart.SmartOrElem
-import Katydid.Regex.Smart.LawfulEqOrd
+import RegexDeriv.Regex.Smart.SmartRegex
+import RegexDeriv.Regex.Smart.SmartOrElem
+import RegexDeriv.Regex.Smart.LawfulEqOrd
 
 open SmartRegex
 

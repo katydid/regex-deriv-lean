@@ -1,6 +1,6 @@
-import Katydid.Std.Lists
+import RegexDeriv.Std.Lists
 
-import Katydid.Std.Ltac
+import RegexDeriv.Std.Ltac
 import Qq
 open Qq
 
@@ -11,7 +11,7 @@ open Qq
 set_option linter.constructorNameAsVariable false
 
 -- list_empty_matcher is a tactic that tries to solve simple theorems about empty lists
--- Reference for list tactic in Coq: https://github.com/katydid/proofs/blob/old-coq/src/CoqStock/Listerine.v#L59-L107
+-- Reference for list tactic in Coq: https://github.com/katydid/regex-deriv-coq/blob/main/src/CoqStock/Listerine.v#L59-L107
 local elab "list_empty_matcher" : tactic => newTactic do
   let goal ← getGoalProp
   match goal with

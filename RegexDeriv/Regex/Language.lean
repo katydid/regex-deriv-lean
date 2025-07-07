@@ -1,5 +1,5 @@
-import Katydid.Std.Linter.DetectClassical
-import Katydid.Std.Lists
+import RegexDeriv.Std.Linter.DetectClassical
+import RegexDeriv.Std.Lists
 
 namespace Language
 

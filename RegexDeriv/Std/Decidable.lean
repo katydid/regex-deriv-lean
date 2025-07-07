@@ -1,4 +1,4 @@
-import Katydid.Std.Linter.DetectClassical
+import RegexDeriv.Std.Linter.DetectClassical
 
 namespace Decidable
 

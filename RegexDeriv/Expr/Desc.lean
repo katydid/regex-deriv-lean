@@ -1,4 +1,4 @@
-import Katydid.Std.Lists
+import RegexDeriv.Std.Lists
 
 /-
 We want to represent some nested function calls for a very restricted language, for example:

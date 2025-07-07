@@ -13,7 +13,7 @@ axiom.
 
 open Lean Elab Command
 
-namespace Katydid.Std.Linter
+namespace RegexDeriv.Std.Linter
 
 /--
 The "detectClassical" linter emits a warning on declarations that depend on the `Classical.choice`
@@ -35,7 +35,7 @@ register_option linter.verbose.detectClassical : Bool := {
 
 namespace DetectClassical
 
-@[inherit_doc Katydid.Std.Linter.linter.detectClassical]
+@[inherit_doc RegexDeriv.Std.Linter.linter.detectClassical]
 def detectClassicalLinter : Linter where run := withSetOptionIn fun stx ↦ do
   unless Linter.getLinterValue linter.detectClassical (← getOptions) do
     return
@@ -64,4 +64,4 @@ initialize addLinter detectClassicalLinter
 
 end DetectClassical
 
-end Katydid.Std.Linter
+end RegexDeriv.Std.Linter

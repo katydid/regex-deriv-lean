@@ -1,4 +1,4 @@
-import Katydid.Std.Ordering
+import RegexDeriv.Std.Ordering
 
 namespace Predicate
 

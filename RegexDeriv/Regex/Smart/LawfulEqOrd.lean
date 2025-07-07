@@ -1,6 +1,6 @@
-import Katydid.Std.Linter.DetectClassical
+import RegexDeriv.Std.Linter.DetectClassical
 
-import Katydid.Std.Ordering
+import RegexDeriv.Std.Ordering
 
 -- TODO: Wait for Std.LawfulEqOrd to land, see
 -- https://leanprover.zulipchat.com/#narrow/channel/217875-Is-there-code-for-X.3F/topic/.E2.9C.94.20Ordering.2Eeq.20is.20equivalent.20to.20LawfulEq/with/519113072

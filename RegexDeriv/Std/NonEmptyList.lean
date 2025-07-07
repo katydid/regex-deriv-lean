@@ -1,6 +1,6 @@
-import Katydid.Std.Linter.DetectClassical
-import Katydid.Std.Ordering
-import Katydid.Std.Lists
+import RegexDeriv.Std.Linter.DetectClassical
+import RegexDeriv.Std.Ordering
+import RegexDeriv.Std.Lists
 
 structure NonEmptyList (α: Type u) where
   head : α

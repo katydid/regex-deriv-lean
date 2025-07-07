@@ -1,7 +1,7 @@
-import Katydid.Std.Linter.DetectClassical
-import Katydid.Std.Decidable
+import RegexDeriv.Std.Linter.DetectClassical
+import RegexDeriv.Std.Decidable
 
-import Katydid.Regex.Language
+import RegexDeriv.Regex.Language
 
 namespace IndexedRegex
 

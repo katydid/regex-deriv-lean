@@ -1,15 +1,15 @@
 -- This file is based on List Proofs originally done in Coq:
--- https://github.com/katydid/proofs/blob/old-coq/src/CoqStock/List.v
+-- https://github.com/katydid/regex-deriv-coq/blob/main/src/CoqStock/List.v
 -- Other Lean List Proofs can be found in:
 -- https://github.com/leanprover/std4/blob/main/Std/Data/List/Lemmas.lean
 
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.SplitIfs
 
-import Katydid.Std.Linter.DetectClassical
-import Katydid.Std.BEq
-import Katydid.Std.Ordering
-import Katydid.Std.Nat
+import RegexDeriv.Std.Linter.DetectClassical
+import RegexDeriv.Std.BEq
+import RegexDeriv.Std.Ordering
+import RegexDeriv.Std.Nat
 
 open Nat
 open List

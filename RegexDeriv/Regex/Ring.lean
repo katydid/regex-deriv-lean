@@ -1,7 +1,7 @@
 import Mathlib.Algebra.Ring.Defs
 import Mathlib.Tactic.Ring
 
-import Katydid.Regex.Language
+import RegexDeriv.Regex.Language
 
 open Language
 

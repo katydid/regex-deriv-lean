@@ -1,7 +1,7 @@
 import Lake
 open Lake DSL
 
-package katydid
+package regexderiv
 
 abbrev packageLinters : Array LeanOption := #[
   ⟨`weak.linter.detectClassical, true⟩
@@ -11,7 +11,7 @@ abbrev packageLeanOptions :=
   packageLinters
 
 @[default_target]
-lean_lib Katydid where
+lean_lib RegexDeriv where
   leanOptions := packageLeanOptions
   moreServerOptions := packageLinters
 

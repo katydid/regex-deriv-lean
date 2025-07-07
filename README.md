@@ -1,12 +1,12 @@
-# proofs
+# regex-deriv-lean
 
-Proofs written in [Lean4](https://leanprover.github.io/) for the core [katydid](https://katydid.github.io/) validation algorithm
+Proofs for derivatives of regular expressions in Lean4](https://leanprover.github.io/).
 
-![Check Proofs](https://github.com/katydid/proofs/workflows/Check%20Proofs/badge.svg)
+![Check Proofs](https://github.com/katydid/regex-deriv-lean/workflows/Check%20Proofs/badge.svg)
 
 ## Goal
 
-The goal is to formalize the core [katydid](https://katydid.github.io/) validation algorithm.  This algorithm allows us to validate millions of serialized data structures per second on a single core. The algorithm is based on derivatives for regular expressions and extends this to Visibly Pushdown Automata (VPA), by splitting the derivative function into two functions. It also includes several basic optimizations, such as memoization, simplification, laziness, zipping of multiple states, short circuiting, evaluation at compilation, symbolic derivatives and a pull based parser for serialized data structures that allows us to skip over some of the parsing.  You can play around with the validation language on its [playground](http://katydid.github.io/play/).
+The goal is to formalize derivatives of symbolic regular expressions.
 
 ## Plan
 
@@ -17,12 +17,12 @@ This is just a quick overview of the steps towards our goal.
 Prove theorems about Symbolic regular expressions as a foundation to build upon.
 
 - [x] Prove correctness of derivative algorithm via a commuting diagram.
-- [ ] Prove correctness of derivative algorithm via a Regex type indexed with Language.
+- [x] Prove correctness of derivative algorithm via a Regex type indexed with Language.
 - [x] Prove decidability of derivative algorithm.
 - [x] Prove correctness of simplification rules.
 - [ ] Prove correctness of smart constructors.
 
-Reuse as much as we can from [our previous work in Coq](https://github.com/katydid/regex-derivatives-coq) and our attempt at [Reproving Agda in Lean](https://github.com/katydid/symbolic-automatic-derivatives)
+Reuse as much as we can from [our previous work in Coq](https://github.com/katydid/regex-deriv-coq) and our attempt at [Reproving Agda in Lean](https://github.com/katydid/regex-deriv-reproving-agda-in-lean)
 
 ### Symbolic predicates
 
@@ -31,20 +31,10 @@ Reuse as much as we can from [our previous work in Coq](https://github.com/katyd
 - [ ] Prove that non-reader functions can be pre-computed before evaluating time
 - [ ] Prove that the optimized comparison method using a hash is comparable (transitive, associative, etc.)
 
-### Katydid Algorithm
-
-- [ ] Create Language definition for the symbolic tree expressions.
-- [ ] Code Pull-based Parser class in Lean and implement JSON as an example.
-- [ ] Code Katydid algorithm in Lean.
-- [ ] Prove correctness of derivative tree algorithm.
-- [ ] Prove decidablity of derivative tree algorithm.
-- [ ] Prove that the simple tree function and the VPA functions are equivalent and equivalent to the inductive predicate.
-- [ ] Prove correctness of new simplification rules
-- [ ] Prove all optimizations of the katydid algorithm
-
 ## Contributing
 
-Please check the [prerequisites](https://github.com/katydid/proofs#prerequisites) and read the [contributing guidelines](https://github.com/katydid/proofs/blob/master/CONTRIBUTING.md).  The contributing guidelines are short and shouldn't be surprising.
+The contributing guidelines are short and shouldn't be surprising.
+Please read the [contributing guidelines](./CONTRIBUTING.md). 
 
 ### Understanding Brzozowski derivatives
 
@@ -67,7 +57,7 @@ Optionally the following will also be helpful, but this is not required:
     + [Theorem Proving in Lean4](https://leanprover.github.io/theorem_proving_in_lean4/title_page.html) to close the gap between Coq and Lean.
     + [Lean Manual](https://leanprover.github.io/lean4/doc/whatIsLean.html) for programming in Lean and Monads.
     + [Lean Tactics File](https://github.com/leanprover/lean4/blob/master/src/Init/Tactics.lean)
-    + [Coq Lean Tactic Cheat Sheet](https://github.com/katydid/coq-lean-cheatsheet/)
+    + [Coq Lean Tactic Cheat Sheet](https://github.com/funexists/coq-lean-cheatsheet/)
     + [Lean Standard Libary Documentation](https://leanprover-community.github.io/mathlib4_docs/Std/Data/HashMap/Basic.html#Std.HashMap)
     + [Lean4 Meta Programming Book](https://github.com/arthurpaulino/lean4-metaprogramming-book)
     + [Tactic List](https://github.com/haruhisa-enomoto/mathlib4-all-tactics/blob/main/all-tactics.md)
@@ -76,6 +66,6 @@ Questions about Lean4 can be asked on [proofassistants.stackexchange](https://pr
 
 ### Setup
 
-  - Lean4 has exceptional [instructions for installing Lean4 in VS Code](https://github.com/leanprover/lean4/blob/master/doc/quickstart.md).
+  - Lean4 has exceptional [instructions for installing Lean4 in VS Code](https://lean-lang.org/install/).
   - Remember to also add `lake` (the build system for lean) to your `PATH`.  You can do this on mac by adding `export PATH=~/.elan/bin/:${PATH}` to your  `~/.zshrc` file
   - Use mathlib's cache to speed up building time by running: `$ lake exe cache get`

@@ -1,9 +1,9 @@
-import Katydid.Std.Linter.DetectClassical
+import RegexDeriv.Std.Linter.DetectClassical
 
-import Katydid.Std.Ordering
+import RegexDeriv.Std.Ordering
 
-import Katydid.Regex.Smart.SmartRegex
-import Katydid.Regex.Smart.SmartCommutesOr
+import RegexDeriv.Regex.Smart.SmartRegex
+import RegexDeriv.Regex.Smart.SmartCommutesOr
 
 open SmartRegex
 open List

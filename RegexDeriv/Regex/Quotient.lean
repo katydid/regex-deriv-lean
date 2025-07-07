@@ -1,4 +1,4 @@
-import Katydid.Regex.SimpleRegex
+import RegexDeriv.Regex.SimpleRegex
 
 open SimpleRegex
 
