@@ -3,6 +3,7 @@
 
 import Lean.Util.CollectAxioms
 import Mathlib.Tactic.DeclarationNames
+import Lean.Linter
 
 /-!
 #  The "detectClassical" linter
@@ -37,14 +38,14 @@ namespace DetectClassical
 
 @[inherit_doc RegexDeriv.Std.Linter.linter.detectClassical]
 def detectClassicalLinter : Linter where run := withSetOptionIn fun stx ↦ do
-  unless Linter.getLinterValue linter.detectClassical (← getOptions) do
+  unless Linter.getLinterValue linter.detectClassical (← Linter.getLinterOptions) do
     return
   if (← get).messages.hasErrors then
     return
   let d := (stx.getPos?.getD default)
   let nmsd := (← Mathlib.Linter.getNamesFrom d)
   let nms := nmsd.filter (! ·.getId.isInternal)
-  let verbose? := Linter.getLinterValue linter.verbose.detectClassical (← getOptions)
+  let verbose? := Linter.getLinterValue linter.verbose.detectClassical (← Linter.getLinterOptions)
   for constStx in nms do
     let constName := constStx.getId
     let axioms ← collectAxioms constName
