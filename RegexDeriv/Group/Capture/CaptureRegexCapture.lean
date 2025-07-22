@@ -1,8 +1,7 @@
 -- This algorithm is based on the algorithm in RegexDeriv.Group.GroupCapture.
--- It has been adjust to:
---   * store the capture information in a new matched operator.
+-- It has been adjust to store the capture information in a new matched operator.
 
-import RegexDeriv.Capture.CaptureRegex
+import RegexDeriv.Group.Capture.CaptureRegex
 
 namespace CaptureRegexCapture
 
@@ -38,8 +37,8 @@ partial def derive (x: CaptureRegex) (char: Char): CaptureRegex :=
     else CaptureRegex.concat (derive y char) z
   | CaptureRegex.star y => CaptureRegex.smartConcat (derive y char) x
   -- Unlike RegexDeriv.Group.GroupCapture.derive we do not store the captured char here, but rather in matched.
-  | CaptureRegex.group n y =>
-    CaptureRegex.group n (derive y char)
+  | CaptureRegex.group id y =>
+    CaptureRegex.group id (derive y char)
 
 -- extract extracts a single list of characters for the whole expression.
 -- This based on extractGroups, but only returns one captured string.

@@ -13,7 +13,7 @@ This repo contains:
  * [Correct by construction proof for the derivative algorithm](./RegexDeriv/Regex/IndexedRegex.lean)
  * [Proofs for simplification rules](./RegexDeriv/Regex/Language.lean)
  * [Implementation of capturing using derivatives](./RegexDeriv/Group/)
- * [Implementation of capturing using derivatives with extensions](./RegexDeriv/Capture/)
+ * [Implementation of modified capturing using derivatives](./RegexDeriv/Group/Capture/)
  * Lean4 [learnings](./learnings/) we had while recreating algorithms and proofs in Lean.
 
 A lot of work was done by building on [our previous work in Coq](https://github.com/katydid/regex-deriv-coq) and our attempt at [Reproving Agda in Lean](https://github.com/katydid/regex-deriv-reproving-agda-in-lean)

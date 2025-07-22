@@ -39,8 +39,8 @@ partial def derive (x: GroupRegex) (char: Char): GroupRegex :=
   | GroupRegex.star y => GroupRegex.smartConcat (derive y char) x
   -- group is the new operator compared to Regex.
   -- We store the input char in the expression.
-  | GroupRegex.group n chars y =>
-    GroupRegex.group n (chars ++ [char]) (derive y char)
+  | GroupRegex.group id chars y =>
+    GroupRegex.group id (chars ++ [char]) (derive y char)
 
 -- extractGroups returns the captured string for each group.
 def extractGroups (x: GroupRegex): List (Nat × List Char) :=
