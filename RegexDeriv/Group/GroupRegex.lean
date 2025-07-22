@@ -21,6 +21,8 @@ def GroupRegex.nullable (x: GroupRegex): Bool :=
   -- The group is nullable if its embedded expression is nullable.
   | GroupRegex.group _ _ y => nullable y
 
+-- unescapable returns whether this expression will not change based on any input.
+-- For example, emptyset will never change based on any input, so it will return true.
 def GroupRegex.unescapable (x: GroupRegex): Bool :=
   match x with
   | GroupRegex.emptyset => true

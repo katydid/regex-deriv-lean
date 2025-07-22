@@ -25,4 +25,7 @@ import RegexDeriv.Regex.Smart.SmartOr
 import RegexDeriv.Group.GroupRegex
 import RegexDeriv.Group.GroupRegexCapture
 
+import RegexDeriv.Capture.CaptureRegex
+import RegexDeriv.Capture.CaptureRegexCapture
+
 import RegexDeriv.Expr.Desc

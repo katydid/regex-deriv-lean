@@ -42,7 +42,8 @@ partial def derive (x: GroupRegex) (char: Char): GroupRegex :=
   | GroupRegex.group n chars y =>
     GroupRegex.group n (chars ++ [char]) (derive y char)
 
-def extract (x: GroupRegex): List (Nat × List Char) :=
+-- extractGroups returns the captured string for each group.
+def extractGroups (x: GroupRegex): List (Nat × List Char) :=
   match x with
   -- should never be encountered, since emptyset is not nullable.
   | GroupRegex.emptyset => []
@@ -52,21 +53,21 @@ def extract (x: GroupRegex): List (Nat × List Char) :=
   | GroupRegex.or y z =>
     -- Under POSIX semantics, we prefer matching the left alternative.
     if y.nullable
-    then extract y
-    else extract z
+    then extractGroups y
+    else extractGroups z
   | GroupRegex.concat y z =>
-    extract y ++ extract z
+    extractGroups y ++ extractGroups z
     -- Groups under a star are ignored.
     -- Recursively extracting under the star causes empty captures to be reported,
     -- which we do not want under POSIX semantics.
   | GroupRegex.star _ => []
-  | GroupRegex.group id c y => (id, c) :: extract y
+  | GroupRegex.group id c y => (id, c) :: extractGroups y
 
 -- captures returns all captured strings for all groups.
 def captures (x: GroupRegex) (chars: List Char): Option (List (Nat × List Char)) :=
   let dx := List.foldl derive x chars
   if dx.nullable
-  then Option.some (extract dx)
+  then Option.some (extractGroups dx)
   else Option.none
 
 -- capture only returns the longest capture for a specific group.
