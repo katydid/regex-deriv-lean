@@ -14,11 +14,15 @@ import RegexDeriv.Regex.Ring
 import RegexDeriv.Regex.Quotient
 import RegexDeriv.Regex.SimpleRegex
 import RegexDeriv.Regex.IndexedRegex
+
 import RegexDeriv.Regex.Smart.LawfulEqOrd
 import RegexDeriv.Regex.Smart.SmartRegex
 import RegexDeriv.Regex.Smart.SmartCommutesOr
 import RegexDeriv.Regex.Smart.SmartCommutes
 import RegexDeriv.Regex.Smart.SmartOrElem
 import RegexDeriv.Regex.Smart.SmartOr
+
+import RegexDeriv.Group.GroupRegex
+import RegexDeriv.Group.GroupRegexCapture
 
 import RegexDeriv.Expr.Desc

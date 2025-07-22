@@ -1,35 +1,21 @@
 # regex-deriv-lean
 
-Proofs for derivatives of regular expressions in Lean4](https://leanprover.github.io/).
+Proofs for derivatives of regular expressions in [Lean4](https://leanprover.github.io/).
 
 ![Check Proofs](https://github.com/katydid/regex-deriv-lean/workflows/Check%20Proofs/badge.svg)
 
-## Goal
+This derivatives for regular expressions is used as the foundation for the katydid validation algorithm.
+Understanding how derivatives work for regular expressions is important before trying to understand the katydid validation algorithm.
 
-The goal is to formalize derivatives of symbolic regular expressions.
+This repo contains:
 
-## Plan
+ * [Correctness and decidability proof for the derivative algorithm](./RegexDeriv/Regex/SimpleRegex.lean)
+ * [Correct by construction proof for the derivative algorithm](./RegexDeriv/Regex/IndexedRegex.lean)
+ * [Proofs for simplification rules](./RegexDeriv/Regex/Language.lean)
+ * [Implementation of capturing using derivatives](./RegexDeriv/Group/)
+ * Lean4 [learnings](./learnings/) we had while recreating algorithms and proofs in Lean.
 
-This is just a quick overview of the steps towards our goal.
-
-### Symbolic regular expressions
-
-Prove theorems about Symbolic regular expressions as a foundation to build upon.
-
-- [x] Prove correctness of derivative algorithm via a commuting diagram.
-- [x] Prove correctness of derivative algorithm via a Regex type indexed with Language.
-- [x] Prove decidability of derivative algorithm.
-- [x] Prove correctness of simplification rules.
-- [ ] Prove correctness of smart constructors.
-
-Reuse as much as we can from [our previous work in Coq](https://github.com/katydid/regex-deriv-coq) and our attempt at [Reproving Agda in Lean](https://github.com/katydid/regex-deriv-reproving-agda-in-lean)
-
-### Symbolic predicates
-
-- [ ] Create expression language as described in the post: [Derivatives of Symbolic Automata explained](https://medium.com/@awalterschulze/derivatives-of-symbolic-automata-explained-4673dee6af82)
-- [ ] Prove correctness of simplification rules for `or`, `and`, `false`, etc.
-- [ ] Prove that non-reader functions can be pre-computed before evaluating time
-- [ ] Prove that the optimized comparison method using a hash is comparable (transitive, associative, etc.)
+A lot of work was done by building on [our previous work in Coq](https://github.com/katydid/regex-deriv-coq) and our attempt at [Reproving Agda in Lean](https://github.com/katydid/regex-deriv-reproving-agda-in-lean)
 
 ## Contributing
 
@@ -54,12 +40,12 @@ This repo also requires an understanding of proof assistants, since all the proo
 Optionally the following will also be helpful, but this is not required:
 
   - Experience with Lean4, since this project is written in Lean4. We recommend reading:
-    + [Theorem Proving in Lean4](https://leanprover.github.io/theorem_proving_in_lean4/title_page.html) to close the gap between Coq and Lean.
+    + [Lean4 Learning Resources](https://lean-lang.org/learn/) to close the gap between Coq and Lean.
     + [Lean Manual](https://leanprover.github.io/lean4/doc/whatIsLean.html) for programming in Lean and Monads.
-    + [Lean Tactics File](https://github.com/leanprover/lean4/blob/master/src/Init/Tactics.lean)
     + [Coq Lean Tactic Cheat Sheet](https://github.com/funexists/coq-lean-cheatsheet/)
     + [Lean Standard Libary Documentation](https://leanprover-community.github.io/mathlib4_docs/Std/Data/HashMap/Basic.html#Std.HashMap)
     + [Lean4 Meta Programming Book](https://github.com/arthurpaulino/lean4-metaprogramming-book)
+    + [Lean Tactics File](https://github.com/leanprover/lean4/blob/master/src/Init/Tactics.lean)
     + [Tactic List](https://github.com/haruhisa-enomoto/mathlib4-all-tactics/blob/main/all-tactics.md)
 
 Questions about Lean4 can be asked on [proofassistants.stackexchange](https://proofassistants.stackexchange.com/) by tagging questions with `lean` and `lean4` or in the [Zulip Chat](https://leanprover.zulipchat.com/).
