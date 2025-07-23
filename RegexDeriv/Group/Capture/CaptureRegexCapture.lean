@@ -156,3 +156,15 @@ def capture (name: Nat) (x: CaptureRegex) (str: String): Option String :=
   )
   "aaa" =
   Option.some [(1, "aaa")]
+
+#guard captures
+  (CaptureRegex.star
+    (CaptureRegex.group 1
+      (CaptureRegex.or
+        (CaptureRegex.char 'a')
+        (CaptureRegex.concat (CaptureRegex.char 'a') (CaptureRegex.char 'a'))
+      )
+    )
+  )
+  "aaa" =
+  Option.some [(1, "aa"), (1, "a")]
