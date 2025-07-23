@@ -111,6 +111,14 @@ def capture (name: Nat) (x: CaptureRegex) (str: String): Option String :=
   "aaabaaa" =
   Option.some "b"
 
+#guard captures (CaptureRegex.concat (CaptureRegex.concat
+    (CaptureRegex.star (CaptureRegex.char 'a'))
+    (CaptureRegex.group 1 (CaptureRegex.char 'b')))
+    (CaptureRegex.star (CaptureRegex.char 'a'))
+  )
+  "aaabaaa" =
+  Option.some [(1, "b")]
+
 #guard capture 1 (CaptureRegex.concat (CaptureRegex.concat
     (CaptureRegex.star (CaptureRegex.char 'a'))
     (CaptureRegex.group 1 (CaptureRegex.star (CaptureRegex.char 'b'))))
@@ -118,6 +126,14 @@ def capture (name: Nat) (x: CaptureRegex) (str: String): Option String :=
   )
   "aaabbbaaa" =
   Option.some "bbb"
+
+#guard captures (CaptureRegex.concat (CaptureRegex.concat
+    (CaptureRegex.star (CaptureRegex.char 'a'))
+    (CaptureRegex.group 1 (CaptureRegex.star (CaptureRegex.char 'b'))))
+    (CaptureRegex.star (CaptureRegex.char 'a'))
+  )
+  "aaabbbaaa" =
+  Option.some [(1, "bbb")]
 
 #guard capture 1 (CaptureRegex.concat (CaptureRegex.concat
     (CaptureRegex.star (CaptureRegex.char 'a'))
@@ -168,3 +184,15 @@ def capture (name: Nat) (x: CaptureRegex) (str: String): Option String :=
   )
   "aaa" =
   Option.some [(1, "aa"), (1, "a")]
+
+#guard captures
+  (CaptureRegex.star
+    (CaptureRegex.group 1
+      (CaptureRegex.or
+        (CaptureRegex.char 'a')
+        (CaptureRegex.concat (CaptureRegex.char 'a') (CaptureRegex.char 'a'))
+      )
+    )
+  )
+  "aaaa" =
+  Option.some [(1, "aa"), (1, "aa")]

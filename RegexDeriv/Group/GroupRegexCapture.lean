@@ -95,6 +95,14 @@ def capture (name: Nat) (x: GroupRegex) (str: String): Option String :=
   "aaabaaa" =
   Option.some "b"
 
+#guard captures (GroupRegex.concat (GroupRegex.concat
+    (GroupRegex.star (GroupRegex.char 'a'))
+    (GroupRegex.group 1 [] (GroupRegex.char 'b')))
+    (GroupRegex.star (GroupRegex.char 'a'))
+  )
+  "aaabaaa" =
+  Option.some [(1, "b")]
+
 #guard capture 1 (GroupRegex.concat (GroupRegex.concat
     (GroupRegex.star (GroupRegex.char 'a'))
     (GroupRegex.group 1 [] (GroupRegex.star (GroupRegex.char 'b'))))
@@ -102,6 +110,14 @@ def capture (name: Nat) (x: GroupRegex) (str: String): Option String :=
   )
   "aaabbbaaa" =
   Option.some "bbb"
+
+#guard captures (GroupRegex.concat (GroupRegex.concat
+    (GroupRegex.star (GroupRegex.char 'a'))
+    (GroupRegex.group 1 [] (GroupRegex.star (GroupRegex.char 'b'))))
+    (GroupRegex.star (GroupRegex.char 'a'))
+  )
+  "aaabbbaaa" =
+  Option.some [(1, "bbb")]
 
 #guard capture 1 (GroupRegex.concat (GroupRegex.concat
     (GroupRegex.star (GroupRegex.char 'a'))
@@ -152,3 +168,15 @@ def capture (name: Nat) (x: GroupRegex) (str: String): Option String :=
   )
   "aaa" =
   Option.some [(1, "aa"), (1, "a")]
+
+#guard captures
+  (GroupRegex.star
+    (GroupRegex.group 1 []
+      (GroupRegex.or
+        (GroupRegex.char 'a')
+        (GroupRegex.concat (GroupRegex.char 'a') (GroupRegex.char 'a'))
+      )
+    )
+  )
+  "aaaa" =
+  Option.some [(1, "aa"), (1, "aa")]
