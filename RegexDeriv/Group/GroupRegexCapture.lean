@@ -64,23 +64,25 @@ def extractGroups (x: GroupRegex): List (Nat × List Char) :=
   | GroupRegex.group id c y => (id, c) :: extractGroups y
 
 -- captures returns all captured strings for all groups.
-def captures (x: GroupRegex) (chars: List Char): Option (List (Nat × List Char)) :=
+def captures (x: GroupRegex) (str: String): Option (List (Nat × String)) :=
+  match str with
+  | String.mk chars =>
   let dx := List.foldl derive x chars
   if dx.nullable
-  then Option.some (extractGroups dx)
+  then
+    let ex := extractGroups dx
+    Option.some (List.map (fun(id, cs) => (id, String.mk cs) ) ex)
   else Option.none
 
 -- capture only returns the longest capture for a specific group.
-def capture (name: Nat) (x: GroupRegex) (input: String): Option String :=
-  match input with
-  | String.mk chars =>
-  match captures x chars with
+def capture (name: Nat) (x: GroupRegex) (str: String): Option String :=
+  match captures x str with
   | Option.none => Option.none
   | Option.some cs =>
   let strs := List.filterMap
-    (fun (name', str) =>
+    (fun (name', str') =>
       if name = name'
-      then Option.some (String.mk str)
+      then Option.some str'
       else Option.none
     ) cs
   List.head? (List.reverse (List.mergeSort strs))
@@ -126,3 +128,15 @@ def capture (name: Nat) (x: GroupRegex) (input: String): Option String :=
   )
   "aaabccaaa" =
   Option.some "bcc"
+
+#guard captures
+  (GroupRegex.group 1 []
+    (GroupRegex.star
+      (GroupRegex.or
+        (GroupRegex.char 'a')
+        (GroupRegex.concat (GroupRegex.char 'a') (GroupRegex.char 'a'))
+      )
+    )
+  )
+  "aaa" =
+  Option.some [(1, "aaa")]
