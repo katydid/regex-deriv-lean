@@ -28,4 +28,6 @@ import RegexDeriv.Group.GroupRegexCapture
 import RegexDeriv.Group.Capture.CaptureRegex
 import RegexDeriv.Group.Capture.CaptureRegexCapture
 
+import RegexDeriv.Group.CaptureNot.CaptureNotRegex
+
 import RegexDeriv.Expr.Desc
