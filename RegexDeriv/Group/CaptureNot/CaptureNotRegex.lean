@@ -4,11 +4,7 @@ namespace CaptureNotRegex
 
 inductive CaptureNotRegex where
   -- emptyset captures a string that was not matched.
-  -- TODO: If you want to generalize this beyond lists and strings
-  --   Change this from a List to a single Char
-  --   We tried to use concat as a substitute in the past, but the ordering on extraction was too complicated.
-  --   In derive, if y = emptyset or a concat of emptyset, then the order is mixed up in `CaptureNotRegex.concat (derive cap y char) z`
-  | emptyset (s: List Char)
+  | emptyset (s: Option Char)
   -- epsilon captures a character that was matched.
   | epsilon (c: Option Char)
   | char (c: Char)
@@ -44,6 +40,12 @@ def CaptureNotRegex.nullable (x: CaptureNotRegex): Bool :=
   -- Yes neutralized starts out as nullable, but that can change, even if not more characters are captured.
   | CaptureNotRegex.neutralized y => nullable y
 
+def CaptureNotRegex.isEmptySetCapture (x: CaptureNotRegex): Bool :=
+  match x with
+  | CaptureNotRegex.emptyset _ => true
+  | CaptureNotRegex.concat y z => isEmptySetCapture y && isEmptySetCapture z
+  | _ => false
+
 -- contains is a combinator to create a contains expression.
 def CaptureNotRegex.contains (x: CaptureNotRegex): CaptureNotRegex :=
   (concat (star any) (concat x (star any)))
@@ -51,27 +53,27 @@ def CaptureNotRegex.contains (x: CaptureNotRegex): CaptureNotRegex :=
 -- smartOr is a smart constructor for the or operator.
 def CaptureNotRegex.smartOr (x y: CaptureNotRegex): CaptureNotRegex :=
   match x with
-  | emptyset [] => y
+  | emptyset Option.none => y
   | _ =>
     match y with
-    | emptyset [] => x
+    | emptyset Option.none => x
     | _ => or x y
 
 -- smartConcat is a smart constructor for the concat operator.
 def CaptureNotRegex.smartConcat (x y: CaptureNotRegex): CaptureNotRegex :=
   match x with
-  | emptyset [] => emptyset []
+  | emptyset Option.none => emptyset Option.none
   | epsilon Option.none => y
   | _ =>
     match y with
-    | emptyset [] => emptyset []
+    | emptyset Option.none => emptyset Option.none
     | epsilon Option.none => x
     | _ => concat x y
 
 -- smartStar is a smart constructor for the star operator.
 def CaptureNotRegex.smartStar (x: CaptureNotRegex): CaptureNotRegex :=
   match x with
-  | emptyset [] => epsilon Option.none
+  | emptyset Option.none => epsilon Option.none
   | star _ => x
   | _ => star x
 
@@ -84,33 +86,37 @@ def CaptureNotRegex.smartNot (x: CaptureNotRegex): CaptureNotRegex :=
 -- cap says whether the derivative should capture, i.e. the expression is not neutralized.
 partial def derive (cap: Bool) (x: CaptureNotRegex) (char: Char): CaptureNotRegex :=
   match x with
-  | CaptureNotRegex.emptyset s =>
+  | CaptureNotRegex.emptyset Option.none =>
     if cap
     -- keep a list of the unmatched characters.
-    then CaptureNotRegex.emptyset (s ++ [char])
-    else CaptureNotRegex.emptyset s
+    then CaptureNotRegex.emptyset char
+    else CaptureNotRegex.emptyset Option.none
+  | CaptureNotRegex.emptyset (Option.some c) =>
+    if cap
+    -- keep a list of the unmatched characters.
+    then CaptureNotRegex.concat (CaptureNotRegex.emptyset c) (CaptureNotRegex.emptyset char)
+    else CaptureNotRegex.emptyset (Option.some c)
   | CaptureNotRegex.epsilon Option.none =>
     if cap
-    then CaptureNotRegex.emptyset [char]
-    else CaptureNotRegex.emptyset []
-    | CaptureNotRegex.epsilon (Option.some c) =>
+    then CaptureNotRegex.emptyset (Option.some char)
+    else CaptureNotRegex.emptyset Option.none
+  | CaptureNotRegex.epsilon (Option.some c) =>
     if cap
-    -- keep a list of the unmatched characters.
-    then CaptureNotRegex.emptyset [c, char]
-    else CaptureNotRegex.emptyset [c]
+    then CaptureNotRegex.concat (CaptureNotRegex.emptyset c) (CaptureNotRegex.emptyset char)
+    else CaptureNotRegex.emptyset (Option.some c)
   | CaptureNotRegex.char c =>
     if cap
     then
       if c = char
       -- keep the matched character.
       then CaptureNotRegex.epsilon (Option.some char)
-      else CaptureNotRegex.emptyset [char]
+      else CaptureNotRegex.emptyset (Option.some char)
     else
-      CaptureNotRegex.emptyset []
+      CaptureNotRegex.emptyset Option.none
   | CaptureNotRegex.any =>
     if cap
     then CaptureNotRegex.epsilon (Option.some char)
-    else CaptureNotRegex.emptyset []
+    else CaptureNotRegex.emptyset Option.none
   | CaptureNotRegex.or y z => CaptureNotRegex.smartOr (derive cap y char) (derive cap z char)
   | CaptureNotRegex.and y z => CaptureNotRegex.and (derive cap y char) (derive cap z char)
   | CaptureNotRegex.concat y z =>
@@ -118,7 +124,15 @@ partial def derive (cap: Bool) (x: CaptureNotRegex) (char: Char): CaptureNotRege
     then CaptureNotRegex.smartOr
       (CaptureNotRegex.smartConcat (derive cap y char) z)
       (CaptureNotRegex.smartConcat (CaptureNotRegex.neutralized y) (derive cap z char))
-    else CaptureNotRegex.concat (derive cap y char) z
+    else
+      if CaptureNotRegex.isEmptySetCapture x
+      then
+        -- If this is not correct then revert emptyset to capture a list characters.
+        -- We prefer this way, since now it is easier to generalize beyond strings to trees.
+        -- In derive, if y = emptyset or a concat of emptyset, then the order is usually mixed up in `CaptureNotRegex.concat (derive cap y char) z`
+        -- But if this is a concat of emptysets, then it doesn't matter which derivative we take, so we might as well take the second derivative to preserve the capturing order.
+        CaptureNotRegex.concat y (derive cap z char)
+      else CaptureNotRegex.concat (derive cap y char) z
   | CaptureNotRegex.interleave y z =>
     CaptureNotRegex.smartOr
       (CaptureNotRegex.interleave (derive cap y char) z)
@@ -134,21 +148,18 @@ partial def derive (cap: Bool) (x: CaptureNotRegex) (char: Char): CaptureNotRege
 
 -- extract extracts a single list of characters for the whole expression.
 -- This based on extractGroups, but only returns one captured string.
--- The neg := false, only return matched
---     neg := true, only return unmatched
+-- The neg := false, only return characters in epsilon
+--     neg := true, only return characters in emptyset
 def extract (neg: Bool) (x: CaptureNotRegex): List Char :=
   match x with
-  | CaptureNotRegex.emptyset s =>
+  | CaptureNotRegex.emptyset c =>
     if neg
-    then s
+    then c.toList
     else []
-  | CaptureNotRegex.epsilon c' =>
+  | CaptureNotRegex.epsilon c =>
     if neg
     then []
-    else
-      match c' with
-      | Option.none => []
-      | Option.some c => [c]
+    else c.toList
   | CaptureNotRegex.char _ => []
   | CaptureNotRegex.any => []
   | CaptureNotRegex.or y z =>
@@ -525,6 +536,13 @@ open CaptureNotRegex (emptyset epsilon char any or and concat interleave star gr
 #guard capture 1
   (group 1
     (not (char 'a'))
+  )
+  "abcdef"
+  = Option.some "abcdef"
+
+#guard capture 1
+  (group 1
+    (not (concat (char 'a') (char 'b')))
   )
   "abcdef"
   = Option.some "abcdef"
