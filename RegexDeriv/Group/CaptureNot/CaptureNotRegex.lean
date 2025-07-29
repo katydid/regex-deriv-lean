@@ -17,6 +17,7 @@ inductive CaptureNotRegex where
   | or (y z: CaptureNotRegex)
   | and (y z: CaptureNotRegex)
   | concat (y z: CaptureNotRegex)
+  | interleave (y z: CaptureNotRegex)
   | star (y: CaptureNotRegex)
   | group (id: Nat) (x: CaptureNotRegex)
   -- not is the compliment operator.
@@ -34,6 +35,7 @@ def CaptureNotRegex.nullable (x: CaptureNotRegex): Bool :=
   | CaptureNotRegex.or y z => nullable y || nullable z
   | CaptureNotRegex.and y z => nullable y && nullable z
   | CaptureNotRegex.concat y z => nullable y && nullable z
+  | CaptureNotRegex.interleave y z => nullable y && nullable z
   | CaptureNotRegex.star _ => true
   -- The group is nullable if its embedded expression is nullable.
   | CaptureNotRegex.group _ y => nullable y
@@ -117,6 +119,10 @@ partial def derive (cap: Bool) (x: CaptureNotRegex) (char: Char): CaptureNotRege
       (CaptureNotRegex.smartConcat (derive cap y char) z)
       (CaptureNotRegex.smartConcat (CaptureNotRegex.neutralized y) (derive cap z char))
     else CaptureNotRegex.concat (derive cap y char) z
+  | CaptureNotRegex.interleave y z =>
+    CaptureNotRegex.smartOr
+      (CaptureNotRegex.interleave (derive cap y char) z)
+      (CaptureNotRegex.interleave y (derive cap z char))
   | CaptureNotRegex.star y => CaptureNotRegex.smartConcat (derive cap y char) x
   | CaptureNotRegex.group id y =>
     CaptureNotRegex.group id (derive cap y char)
@@ -161,6 +167,8 @@ def extract (neg: Bool) (x: CaptureNotRegex): List Char :=
     else []
   | CaptureNotRegex.concat y z =>
     extract neg y ++ extract neg z
+  | CaptureNotRegex.interleave y z =>
+    extract neg y ++ extract neg z
   | CaptureNotRegex.star _ => []
   | CaptureNotRegex.group _ y => extract neg y
   -- not inverts the neg value, to make sure we capture the unmatched or matched if it was a double negation.
@@ -185,6 +193,8 @@ def extractGroups (neg: Bool) (x: CaptureNotRegex): List (Nat × List Char) :=
   | CaptureNotRegex.and y z =>
     extractGroups neg y ++ extractGroups neg z
   | CaptureNotRegex.concat y z =>
+    extractGroups neg y ++ extractGroups neg z
+  | CaptureNotRegex.interleave y z =>
     extractGroups neg y ++ extractGroups neg z
   | CaptureNotRegex.star _ => []
   | CaptureNotRegex.group id y => (id, extract neg y) :: extractGroups neg y
@@ -220,7 +230,176 @@ def capture (name: Nat) (x: CaptureNotRegex) (str: String): Option String :=
 
 -- # Tests
 
-open CaptureNotRegex (emptyset epsilon char any or and concat star group not contains)
+open CaptureNotRegex (emptyset epsilon char any or and concat interleave star group not contains)
+
+-- ## New Interleave Tests
+
+#guard capture 1 (interleave
+    (char 'a')
+    (group 1 (char 'b'))
+  )
+  "ab"
+  = Option.some "b"
+
+#guard capture 1 (interleave
+    (char 'a')
+    (group 1 (char 'b'))
+  )
+  "ba"
+  = Option.some "b"
+
+#guard capture 1 (interleave
+    (concat (char 'a') (char 'b'))
+    (group 1 (concat (char 'c') (char 'd')))
+  )
+  "abcd"
+  = Option.some "cd"
+
+#guard capture 1 (interleave
+    (concat (char 'a') (char 'b'))
+    (group 1 (concat (char 'c') (char 'd')))
+  )
+  "acbd"
+  = Option.some "cd"
+
+#guard capture 1 (interleave
+    (concat (char 'a') (char 'b'))
+    (group 1 (concat (char 'c') (char 'd')))
+  )
+  "acdb"
+  = Option.some "cd"
+
+#guard capture 1 (interleave
+    (concat (char 'a') (char 'b'))
+    (group 1 (concat (char 'c') (char 'd')))
+  )
+  "cadb"
+  = Option.some "cd"
+
+#guard capture 1 (interleave
+    (concat (char 'a') (char 'b'))
+    (group 1 (concat (char 'c') (char 'd')))
+  )
+  "cabd"
+  = Option.some "cd"
+
+#guard capture 1 (interleave
+    (concat (char 'a') (char 'b'))
+    (group 1 (concat (char 'c') (char 'd')))
+  )
+  "cdab"
+  = Option.some "cd"
+
+#guard capture 1 (interleave
+    (star (char 'a'))
+    (group 1 (char 'b'))
+  )
+  "aaabaaa"
+  = Option.some "b"
+
+#guard capture 1 (interleave
+    (star (char 'a'))
+    (group 1 (star (char 'b')))
+  )
+  "aaababaa"
+  = Option.some "bb"
+
+-- ### Old Concat Tests adjusted for Interleave
+
+#guard capture 1 (interleave (interleave
+    (star (char 'a'))
+    (group 1 (char 'b')))
+    (star (char 'a'))
+  )
+  "aaabaaa"
+  = Option.some "b"
+
+#guard captures (interleave (interleave
+    (star (char 'a'))
+    (group 1 (char 'b')))
+    (star (char 'a'))
+  )
+  "aaabaaa"
+  = Option.some [(1, "b")]
+
+#guard capture 1 (interleave (interleave
+    (star (char 'a'))
+    (group 1 (star (char 'b'))))
+    (star (char 'a'))
+  )
+  "aaabbbaaa"
+  = Option.some "bbb"
+
+#guard captures (interleave (interleave
+    (star (char 'a'))
+    (group 1 (star (char 'b'))))
+    (star (char 'a'))
+  )
+  "aaabbbaaa"
+  = Option.some [(1, "bbb")]
+
+#guard capture 1 (interleave (interleave
+    (star (char 'a'))
+    (group 1
+      (or
+        (star (char 'b'))
+        (star (char 'c'))
+      )
+    ))
+    (star (char 'a'))
+  )
+  "aaacccaaa"
+  = Option.some "ccc"
+
+#guard capture 1 (interleave (interleave
+    (star (char 'a'))
+    (group 1
+      (or
+        (star (char 'b'))
+        (interleave (char 'b') (star (char 'c')))
+      )
+    ))
+    (star (char 'a'))
+  )
+  "aaabccaaa"
+  = Option.some "bcc"
+
+#guard captures
+  (group 1
+    (star
+      (or
+        (char 'a')
+        (interleave (char 'a') (char 'a'))
+      )
+    )
+  )
+  "aaa"
+  = Option.some [(1, "aaa")]
+
+#guard captures
+  (star
+    (group 1
+      (or
+        (char 'a')
+        (interleave (char 'a') (char 'a'))
+      )
+    )
+  )
+  "aaa"
+  = Option.some [(1, "aa"), (1, "a")]
+
+#guard captures
+  (star
+    (group 1
+      (or
+        (char 'a')
+        (interleave (char 'a') (char 'a'))
+      )
+    )
+  )
+  "aaaa"
+  = Option.some [(1, "aa"), (1, "aa")]
+
 
 -- ## New And Tests
 
