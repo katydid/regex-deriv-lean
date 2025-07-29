@@ -15,6 +15,7 @@ inductive CaptureNotRegex where
   -- any is a useful operator for creating a contains combinator, which is useful for testing the not operator.
   | any
   | or (y z: CaptureNotRegex)
+  | and (y z: CaptureNotRegex)
   | concat (y z: CaptureNotRegex)
   | star (y: CaptureNotRegex)
   | group (id: Nat) (x: CaptureNotRegex)
@@ -31,6 +32,7 @@ def CaptureNotRegex.nullable (x: CaptureNotRegex): Bool :=
   | CaptureNotRegex.char _ => false
   | CaptureNotRegex.any => false
   | CaptureNotRegex.or y z => nullable y || nullable z
+  | CaptureNotRegex.and y z => nullable y && nullable z
   | CaptureNotRegex.concat y z => nullable y && nullable z
   | CaptureNotRegex.star _ => true
   -- The group is nullable if its embedded expression is nullable.
@@ -108,6 +110,7 @@ partial def derive (cap: Bool) (x: CaptureNotRegex) (char: Char): CaptureNotRege
     then CaptureNotRegex.epsilon (Option.some char)
     else CaptureNotRegex.emptyset []
   | CaptureNotRegex.or y z => CaptureNotRegex.smartOr (derive cap y char) (derive cap z char)
+  | CaptureNotRegex.and y z => CaptureNotRegex.and (derive cap y char) (derive cap z char)
   | CaptureNotRegex.concat y z =>
     if CaptureNotRegex.nullable y
     then CaptureNotRegex.smartOr
@@ -150,6 +153,12 @@ def extract (neg: Bool) (x: CaptureNotRegex): List Char :=
     if y.nullable
     then extract neg y
     else extract neg z
+  | CaptureNotRegex.and y z =>
+    let ey := extract neg y
+    let ez := extract neg z
+    if ey == ez
+    then ey
+    else []
   | CaptureNotRegex.concat y z =>
     extract neg y ++ extract neg z
   | CaptureNotRegex.star _ => []
@@ -173,6 +182,8 @@ def extractGroups (neg: Bool) (x: CaptureNotRegex): List (Nat × List Char) :=
     if y.nullable
     then extractGroups neg y
     else extractGroups neg z
+  | CaptureNotRegex.and y z =>
+    extractGroups neg y ++ extractGroups neg z
   | CaptureNotRegex.concat y z =>
     extractGroups neg y ++ extractGroups neg z
   | CaptureNotRegex.star _ => []
@@ -209,7 +220,49 @@ def capture (name: Nat) (x: CaptureNotRegex) (str: String): Option String :=
 
 -- # Tests
 
-open CaptureNotRegex (emptyset epsilon char any or concat star group not contains)
+open CaptureNotRegex (emptyset epsilon char any or and concat star group not contains)
+
+-- ## New And Tests
+
+#guard capture 1
+  (group 1 (and (char 'b') (char 'b')))
+  "b"
+  = Option.some "b"
+
+#guard capture 1
+  (group 1 (and (not (char 'a')) (char 'b')))
+  "b"
+  = Option.some "b"
+
+#guard capture 1
+  (group 1 (and (not (char 'a')) (not (char 'c'))))
+  "b"
+  = Option.some "b"
+
+#guard capture 1
+  (group 1 (and (not (char 'a')) (not (char 'c'))))
+  "bb"
+  = Option.some "bb"
+
+#guard capture 1
+  (and (group 1 (not (char 'a'))) (not (char 'c')))
+  "bb"
+  = Option.some "bb"
+
+#guard capture 1
+  (and (group 1 (not (char 'a'))) (star (char 'b')))
+  "bb"
+  = Option.some "bb"
+
+#guard capture 1
+  (and (group 1 (not (char 'a'))) (star (char 'c')))
+  "bb"
+  = Option.none
+
+#guard capture 1
+  (group 1 (and (not (char 'a')) (star (char 'c'))))
+  "bb"
+  = Option.none
 
 -- ## New Not Tests
 
