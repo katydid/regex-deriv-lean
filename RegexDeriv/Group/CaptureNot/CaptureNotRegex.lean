@@ -52,10 +52,23 @@ def CaptureNotRegex.contains (x: CaptureNotRegex): CaptureNotRegex :=
 def CaptureNotRegex.smartOr (x y: CaptureNotRegex): CaptureNotRegex :=
   match x with
   | emptyset [] => y
+  | star any => star any
   | _ =>
     match y with
     | emptyset [] => x
+    | star any => star any
     | _ => or x y
+
+-- smartAnd is a smart constructor for the or operator.
+def CaptureNotRegex.smartAnd (x y: CaptureNotRegex): CaptureNotRegex :=
+  match x with
+  | emptyset [] => emptyset []
+  | star any => y
+  | _ =>
+    match y with
+    | emptyset [] => emptyset []
+    | star any => x
+    | _ => and x y
 
 -- smartConcat is a smart constructor for the concat operator.
 def CaptureNotRegex.smartConcat (x y: CaptureNotRegex): CaptureNotRegex :=
@@ -67,6 +80,17 @@ def CaptureNotRegex.smartConcat (x y: CaptureNotRegex): CaptureNotRegex :=
     | emptyset [] => emptyset []
     | epsilon Option.none => x
     | _ => concat x y
+
+-- smartAnd is a smart constructor for the or operator.
+def CaptureNotRegex.smartInterleave (x y: CaptureNotRegex): CaptureNotRegex :=
+  match x with
+  | emptyset [] => emptyset []
+  | epsilon Option.none => y
+  | _ =>
+    match y with
+    | emptyset [] => emptyset []
+    | epsilon Option.none => x
+    | _ => interleave x y
 
 -- smartStar is a smart constructor for the star operator.
 def CaptureNotRegex.smartStar (x: CaptureNotRegex): CaptureNotRegex :=
@@ -80,6 +104,13 @@ def CaptureNotRegex.smartNot (x: CaptureNotRegex): CaptureNotRegex :=
   match x with
   | not y => y
   | _ => not x
+
+def CaptureNotRegex.smartNeutralized (x: CaptureNotRegex): CaptureNotRegex :=
+  match x with
+  | emptyset [] => emptyset []
+  | epsilon Option.none => epsilon Option.none
+  | neutralized _ => x
+  | _ => CaptureNotRegex.neutralized x
 
 -- cap says whether the derivative should capture, i.e. the expression is not neutralized.
 partial def derive (cap: Bool) (x: CaptureNotRegex) (char: Char): CaptureNotRegex :=
@@ -202,12 +233,15 @@ def extractGroups (neg: Bool) (x: CaptureNotRegex): List (Nat × List Char) :=
   | CaptureNotRegex.not y => extractGroups (!neg) y
   | CaptureNotRegex.neutralized y => extractGroups neg y
 
--- captures returns all captured strings for all groups.
-def captures (x: CaptureNotRegex) (str: String): Option (List (Nat × String)) :=
+def derives (x: CaptureNotRegex) (str: String): CaptureNotRegex :=
   match str with
   | String.mk chars =>
-  -- derive true, because the default should be to want capturing.
-  let dx := List.foldl (derive true) x chars
+    -- derive true, because the default should be to want capturing.
+    List.foldl (derive true) x chars
+
+-- captures returns all captured strings for all groups.
+def captures (x: CaptureNotRegex) (str: String): Option (List (Nat × String)) :=
+  let dx := derives x str
   if dx.nullable
   then
     -- extractGroups false, since the default is not neg.
@@ -229,6 +263,54 @@ def capture (name: Nat) (x: CaptureNotRegex) (str: String): Option String :=
   List.head? (List.reverse (List.mergeSort strs))
 
 -- # Tests
+
+def simplify (x: CaptureNotRegex) (neg: Bool): CaptureNotRegex :=
+  match x with
+  | CaptureNotRegex.emptyset _ =>
+    if neg
+    then x
+    else CaptureNotRegex.emptyset []
+  | CaptureNotRegex.epsilon _ =>
+    if neg
+    then CaptureNotRegex.epsilon Option.none
+    else x
+  | CaptureNotRegex.char _ => x
+  | CaptureNotRegex.any => x
+  | CaptureNotRegex.or y z => CaptureNotRegex.smartOr (simplify y neg) (simplify z neg)
+  | CaptureNotRegex.and y z => CaptureNotRegex.smartAnd (simplify y neg) (simplify z neg)
+  | CaptureNotRegex.concat y z => CaptureNotRegex.smartConcat (simplify y neg) (simplify z neg)
+  | CaptureNotRegex.interleave y z => CaptureNotRegex.smartInterleave (simplify y neg) (simplify z neg)
+  | CaptureNotRegex.star y => CaptureNotRegex.smartStar (simplify y neg)
+  -- The group is nullable if its embedded expression is nullable.
+  | CaptureNotRegex.group id y => CaptureNotRegex.group id (simplify y neg)
+  | CaptureNotRegex.not y => CaptureNotRegex.smartNot (simplify y (!neg))
+  -- neutralized should calculate the nullablitily of its child expression.
+  -- Yes neutralized starts out as nullable, but that can change, even if not more characters are captured.
+  | CaptureNotRegex.neutralized y => CaptureNotRegex.smartNeutralized (simplify y neg)
+
+def CaptureNotRegex.toString (x: CaptureNotRegex): String :=
+  match x with
+  | CaptureNotRegex.emptyset [] => "∅"
+  | CaptureNotRegex.emptyset xs => "∅[" ++ String.mk xs ++ "]"
+  | CaptureNotRegex.epsilon Option.none => "ε"
+  | CaptureNotRegex.epsilon (Option.some c) => "ε[" ++ String.mk [c] ++ "]"
+  | CaptureNotRegex.char c => String.mk [c]
+  | CaptureNotRegex.any => "."
+  | CaptureNotRegex.or y z => "(" ++ toString y ++ "|" ++ toString z ++ ")"
+  | CaptureNotRegex.and y z => "(" ++ toString y ++ "&" ++ toString z ++ ")"
+  | CaptureNotRegex.concat y z => toString y ++ toString z
+  | CaptureNotRegex.interleave y z => "(" ++ toString y ++ ";" ++ toString z ++ ")"
+  | CaptureNotRegex.star any => ".*"
+  | CaptureNotRegex.star y => "(" ++ toString y ++ ")*"
+  -- The group is nullable if its embedded expression is nullable.
+  | CaptureNotRegex.group id y => "(" ++ ToString.toString id ++ ":" ++ toString y ++ ")"
+  | CaptureNotRegex.not y => "!(" ++ y.toString ++ ")"
+  -- neutralized should calculate the nullablitily of its child expression.
+  -- Yes neutralized starts out as nullable, but that can change, even if not more characters are captured.
+  | CaptureNotRegex.neutralized y => "{" ++ y.toString ++ "}"
+
+def printDerives (x: CaptureNotRegex) (str: String): String :=
+  CaptureNotRegex.toString <| (CaptureNotRegex.simplify (derives x str) false)
 
 open CaptureNotRegex (emptyset epsilon char any or and concat interleave star group not contains)
 
@@ -500,6 +582,26 @@ open CaptureNotRegex (emptyset epsilon char any or and concat interleave star gr
   "abc"
   = Option.some "abc"
 
+#eval printDerives
+  (group 1
+    (not (concat (char 'a') (char 'b')))
+  )
+  "abc"
+
+#eval capture 1
+  (group 1
+    (not (concat (char 'a') (char 'b')))
+  )
+  "abc"
+
+-- TODO: fix
+-- #guard capture 1
+--   (group 1
+--     (not (concat (char 'a') (char 'b')))
+--   )
+--   "abc"
+--   = Option.some "abc"
+
 #guard capture 1
   (group 1 (or
     (not (char 'a'))
@@ -529,6 +631,13 @@ open CaptureNotRegex (emptyset epsilon char any or and concat interleave star gr
   "abcdef"
   = Option.some "abcdef"
 
+#eval capture 1
+  (group 1
+    (not (concat (char 'a') (char 'b')))
+  )
+  "abcdef"
+  -- = Option.some "abcdef"
+
 #guard capture 1
   (concat
     (char 'a')
@@ -552,6 +661,29 @@ open CaptureNotRegex (emptyset epsilon char any or and concat interleave star gr
   )
   "ba"
   = Option.some "a"
+
+-- TODO: fix
+#eval printDerives
+  (concat
+    (star (char 'a'))
+    -- (concat
+      (group 1 (not (contains (char 'a'))))
+      -- (star (char 'a'))
+    -- )
+  )
+  "ab"
+  -- want: "aba"
+
+#guard capture 1
+  (concat
+    (star (char 'a'))
+    -- (concat
+      (group 1 (not (contains (char 'a'))))
+      -- (star (char 'a'))
+    -- )
+  )
+  "ab"
+  = Option.some "b"
 
 #guard capture 1
   (concat
@@ -584,10 +716,21 @@ open CaptureNotRegex (emptyset epsilon char any or and concat interleave star gr
   "aaaabaaa"
   = Option.none
 
+#eval capture 1
+  (group 1 (not (contains (char 'a'))))
+  "b"
+
 #guard capture 1
   (group 1 (not (contains (char 'a'))))
   "b"
   = Option.some "b"
+
+#eval capture 1
+  (concat
+    (star (char 'a'))
+    (group 1 (not (contains (char 'a'))))
+  )
+  "aaab"
 
 #guard capture 1
   (concat
@@ -596,6 +739,13 @@ open CaptureNotRegex (emptyset epsilon char any or and concat interleave star gr
   )
   "aaab"
   = Option.some "b"
+
+#eval capture 1
+  (concat
+    (group 1 (not (contains (char 'a'))))
+    (star (char 'a'))
+  )
+  "ba"
 
 #guard capture 1
   (concat
