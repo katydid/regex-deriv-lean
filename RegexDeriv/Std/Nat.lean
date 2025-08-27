@@ -42,8 +42,6 @@ theorem nat_zero_min {n: Nat}: min n 0 = 0 :=
 
 theorem nat_min_succ' {n: Nat}: min (n + 1) (m + 1) = (min n m) + 1 := by
   unfold min
-  unfold instMin_mathlib
-  unfold inferInstance
   unfold instMinNat
   unfold minOfLe
   simp only
@@ -64,7 +62,7 @@ theorem nat_add_succ_is_succ_add (n m: Nat): succ n + m = succ (n + m) := by
   cases n with
   | zero =>
     rewrite [Nat.add_comm]
-    simp only [zero_eq, zero_add]
+    simp only [zero_add]
   | succ n =>
     rewrite [Nat.add_comm]
     rewrite [Nat.add_comm (succ n)]

@@ -349,7 +349,7 @@ theorem list_take_le_length (n: Nat) (xs: List α):
     cases n with
     | zero  =>
       rw [take]
-      simp only [length_nil, zero_eq, le_refl]
+      simp only [length_nil, le_refl]
     | succ k =>
       rw [take]
       rw [length]
@@ -391,7 +391,7 @@ theorem list_take_length_le (n: Nat) (xs: List α):
     cases n with
     | zero => rw [list_take_zero, length]
     | succ n' =>
-      simp only [Nat.pred_succ, length_take, ge_iff_le, min_eq_left_iff] at h₂
+      simp only [Nat.pred_succ, length_take, min_eq_left_iff] at h₂
       rw [list_take_cons, list_length_cons_succ]
       simp only [length_take, ge_iff_le, succ.injEq, min_eq_left_iff]
       exact h₂
@@ -410,7 +410,7 @@ theorem list_take_app (n: Nat) (xs ys: List α):
     cases xs with
     | nil =>
       repeat rw [take]
-      simp only [nil_append, length_nil, ge_iff_le, nonpos_iff_eq_zero, tsub_zero]
+      simp only [nil_append, length_nil, tsub_zero]
     | cons x xs =>
       rw [take]
       rw [length]

@@ -403,7 +403,7 @@ theorem derive_iff_star {α: Type} {x: α} {R: Lang α} {xs: List α}:
       unfold concat
       exists xs1
       exists xs2
-      simp only [singleton_append, cons_append, cons.injEq] at hxs
+      simp only [cons_append, cons.injEq] at hxs
       cases hxs with
       | intro hxs1 hxs2 =>
       rw [hxs1]
@@ -426,7 +426,7 @@ theorem derive_iff_star {α: Type} {x: α} {R: Lang α} {xs: List α}:
     unfold derives
     refine star.more x xs1 xs2 ?hxs ?e ?f ?g
     · rw [hxs]
-      simp only [singleton_append, cons_append, nil_append]
+      simp only [cons_append, nil_append]
     · apply deriveRxxs1
     · exact starRxs2
 
@@ -738,7 +738,7 @@ theorem simp_and_null_l_emptystr_is_emptystr
   (nullr: null r):
   and r emptystr = emptystr := by
   funext xs
-  simp only [null, and, emptystr, eq_iff_iff, and_iff_right_iff_imp]
+  simp only [and, emptystr, eq_iff_iff, and_iff_right_iff_imp]
   intro hxs
   rw [hxs]
   exact nullr
@@ -759,7 +759,7 @@ theorem simp_and_not_null_l_emptystr_is_emptyset
   (notnullr: Not (null r)):
   and r emptystr = emptyset := by
   funext xs
-  simp only [null, and, emptystr, emptyset, eq_iff_iff, iff_false, not_and]
+  simp only [and, emptystr, emptyset, eq_iff_iff, iff_false, not_and]
   intro hr hxs
   rw [hxs] at hr
   contradiction
@@ -769,7 +769,7 @@ theorem simp_and_emptystr_not_null_r_is_emptyset
   (notnullr: Not (null r)):
   and emptystr r = emptyset := by
   funext xs
-  simp only [null, and, emptystr, emptyset, eq_iff_iff, iff_false, not_and]
+  simp only [and, emptystr, emptyset, eq_iff_iff, iff_false, not_and]
   intro hxs
   rw [hxs]
   exact notnullr
@@ -900,7 +900,7 @@ theorem simp_and_not_emptystr_l_not_null_r_is_r
   (notnullr: Not (null r)):
   and (not emptystr) r = r := by
   funext xs
-  simp only [null, and, not, emptystr, eq_iff_iff, and_iff_right_iff_imp]
+  simp only [and, not, emptystr, eq_iff_iff, and_iff_right_iff_imp]
   intro hr hxs
   rw [hxs] at hr
   contradiction
@@ -1097,7 +1097,6 @@ theorem simp_or_concat_left_distrib (a b c : Lang α) : concat a (or b c) = or (
   unfold or
   unfold concat
   funext xs
-  simp only [exists_eq_left]
   simp only [eq_iff_iff]
   simp only [exists_and_left]
   apply Iff.intro
