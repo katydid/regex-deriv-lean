@@ -236,6 +236,8 @@ instance IsSemiring_or_concat {α: Type}: Semiring (@Lang α) :=
 
 Unfortunately, unlike in Coq, the implementation of the Semiring is not enough to be able to use the ring tactic.
 
+Luckily a new tactic `grind` might be to the rescue soon, see this [example](https://github.com/leanprover/lean4/blob/master/tests/lean/run/grind_noncomm_semiring.lean).
+
 ## References
 
 * [CommSemiring Mathlib Documentation](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Algebra/Ring/Defs.html#CommSemiring)
